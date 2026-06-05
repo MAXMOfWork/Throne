@@ -57,7 +57,7 @@
      text-shadow:0 0 40px rgba(216,178,94,.25)}
   @keyframes shine{to{background-position:220% center}}
   .tagline{color:#d9d2c0;font-size:clamp(15px,2.6vw,19px);margin-top:16px;font-style:italic;letter-spacing:.01em;
-     text-shadow:0 2px 20px rgba(0,0,0,.8);animation:rise 1s .1s cubic-bezier(.2,.8,.2,1) both}
+     text-shadow:0 2px 14px rgba(0,0,0,.95),0 0 28px rgba(0,0,0,.9);animation:rise 1s .1s cubic-bezier(.2,.8,.2,1) both}
   @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
   .stats{display:flex;justify-content:center;margin:26px auto 0;flex-wrap:wrap;
@@ -146,6 +146,22 @@
 
   footer{margin-top:64px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.12em;line-height:2.1}
   #confetti{position:fixed;inset:0;pointer-events:none;z-index:60;display:none}
+  #watch b{color:var(--gold-bright)}
+  #soundToggle{background:none;border:none;cursor:pointer;font-size:13px;line-height:1;padding:0;opacity:.8}
+  #soundToggle:hover{opacity:1}
+  #newKingBanner{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    pointer-events:none;opacity:0;text-align:center;padding:24px;
+    background:radial-gradient(circle at 50% 42%,rgba(0,0,0,.6),rgba(0,0,0,.25) 55%,transparent)}
+  #newKingBanner.show{animation:nk 3.8s cubic-bezier(.2,.8,.2,1) forwards}
+  #newKingBanner .nk-label{font-family:'JetBrains Mono',monospace;letter-spacing:.4em;font-size:13px;color:var(--gold);text-transform:uppercase}
+  #newKingBanner .nk-name{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(36px,9vw,76px);color:#fff7e6;text-shadow:0 0 60px rgba(216,178,94,.75);margin-top:10px;line-height:1.05}
+  #newKingBanner .nk-msg{font-style:italic;color:#e7dcc4;font-size:clamp(16px,3vw,23px);margin-top:10px;max-width:560px}
+  @keyframes nk{0%{opacity:0;transform:scale(.94)}12%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:scale(1.02)}}
+  #challenger{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-24px);z-index:65;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.05em;color:#fff7e6;
+    background:rgba(20,16,10,.92);border:1px solid var(--gold-deep);border-radius:999px;padding:11px 20px;
+    opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;box-shadow:0 12px 44px -12px rgba(216,178,94,.65)}
+  #challenger.show{opacity:1;transform:translateX(-50%) translateY(0)}
   @media (prefers-reduced-motion: reduce){ .seize::after{animation:none} h1{animation:none} }
 </style>
 </head>
@@ -154,11 +170,13 @@
 <div class="vignette"></div>
 <div class="grain"></div>
 <canvas id="confetti"></canvas>
+<div id="newKingBanner"><div class="nk-label">👑 New Ruler Crowned</div><div class="nk-name"></div><div class="nk-msg"></div></div>
+<div id="challenger"></div>
 
 <div class="wrap">
   <div class="topbar">
     <span>THRONE&nbsp;OF&nbsp;THE&nbsp;INTERNET</span>
-    <span class="live"><span class="dot"></span> LIVE · SEASON 1</span>
+    <span class="live"><span id="watch">👁 <b id="watching">1</b> watching</span> · <span class="dot"></span> LIVE <button id="soundToggle" title="Sound on/off">🔊</button></span>
   </div>
 
   <section class="hero">
@@ -217,13 +235,20 @@
 
   <section class="boards">
     <h2>The Hall of Kings</h2>
-    <p class="sub">Reigns are eternal. Glory is measured three ways.</p>
+    <p class="sub">This season's crown. Resets monthly — <span id="seasonCountdown">…</span></p>
     <div class="tabs">
       <button class="tab active" data-board="spend">💰 Biggest Spenders</button>
       <button class="tab" data-board="time">⏳ Longest Combined Reign</button>
       <button class="tab" data-board="longest">🏆 Longest Single Reign</button>
     </div>
     <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+
+    <h2 style="margin-top:54px">The Pantheon</h2>
+    <p class="sub">Each season's champion, immortalized forever.</p>
+    <table>
+      <thead><tr><th>Season</th><th>Champion</th><th style="text-align:right">Spent</th></tr></thead>
+      <tbody id="pantheonBody"></tbody>
+    </table>
   </section>
 
   <footer>
@@ -255,6 +280,8 @@ try {
 
   const camera = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, 0.1, 120);
   camera.position.set(0, 2.4, 10);
+  function fitCamera(){ const portrait = innerWidth / innerHeight < 0.85; camera.fov = portrait ? 70 : 54; camera.position.z = portrait ? 14 : 10; camera.updateProjectionMatrix(); }
+  fitCamera();
 
   // materials
   const stone = new THREE.MeshStandardMaterial({ color: 0x14131b, roughness: 0.92, metalness: 0.06 });
@@ -340,7 +367,7 @@ try {
   // post-processing bloom
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.6, 0.62);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.72, 0.6, 0.62);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
@@ -350,7 +377,7 @@ try {
   window.throneFlash = () => { flash = 1; };
 
   addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    camera.aspect = innerWidth / innerHeight; fitCamera();
     renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
   });
 
@@ -368,7 +395,7 @@ try {
     crown.position.y = 6.0 + Math.sin(t * 1.1) * 0.13;
     crownMat.emissiveIntensity = 1.9 + Math.sin(t * 2.2) * 0.18 + flash * 2.8;
     glow.intensity = 2.2 + flash * 4;
-    bloom.strength = 0.85 + flash * 0.9;
+    bloom.strength = 0.72 + flash * 0.9;
     flash *= 0.94;
 
     shafts.forEach((s, i) => { s.material.opacity = 0.05 + Math.sin(t * 0.5 + i) * 0.025; });
@@ -420,7 +447,9 @@ try {
   }
   db.channel("throne")
     .on("postgres_changes",{event:"*",schema:"public",table:"throne_current"},
-      (p)=>{ if(window.throneFlash) window.throneFlash(); throne=p.new; lastKing=p.new.display_name; paintThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard(currentBoard); })
+      (p)=>{ const isNew = p.new.display_name !== lastKing; if(window.throneFlash) window.throneFlash();
+        if(isNew){ showNewKing(p.new.display_name, p.new.message_status==="approved"?p.new.message:""); playFanfare(); }
+        throne=p.new; lastKing=p.new.display_name; paintThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard(currentBoard); })
     .subscribe();
   setInterval(paintThrone, 1000);
 
@@ -487,6 +516,7 @@ try {
     const displayName = document.getElementById("name").value.trim();
     const message = document.getElementById("msg").value.trim();
     if(!displayName){ document.getElementById("name").focus(); return; }
+    try{ presence.send({type:"broadcast",event:"challenge",payload:{name:displayName}}); }catch(e){}
     startCheckout({ action:"take", displayName, message }, document.getElementById("seize"));
   });
   document.getElementById("fortifyBtn").addEventListener("click", ()=> startCheckout({ action:"fortify" }, document.getElementById("fortifyBtn")));
@@ -528,7 +558,47 @@ try {
     confetti();
   }
 
-  loadThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard("spend");
+  // ---- live "watching" counter (Supabase Realtime presence) ----
+  const presence = db.channel("presence-throne", { config:{ presence:{ key: (self.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Math.random())) }, broadcast:{ self:false } } });
+  presence.on("presence",{event:"sync"},()=>{ const n=Object.keys(presence.presenceState()).length||1; const el=document.getElementById("watching"); if(el) el.textContent=n; });
+  presence.on("broadcast",{event:"challenge"},(m)=>showChallenger(m && m.payload && m.payload.name));
+  presence.subscribe(async (s)=>{ if(s==="SUBSCRIBED"){ try{ await presence.track({at:Date.now()}); }catch(e){} } });
+
+  // ---- sound (generated, no audio files) ----
+  let audioCtx=null, muted=false;
+  function unlockAudio(){ try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }catch(e){} }
+  addEventListener("pointerdown", unlockAudio);
+  document.getElementById("soundToggle").addEventListener("click",function(){ muted=!muted; this.textContent=muted?"🔇":"🔊"; unlockAudio(); });
+  function playFanfare(){ if(!audioCtx||muted) return; const now=audioCtx.currentTime;
+    [523.25,659.25,783.99,1046.5].forEach((f,i)=>{ const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type="triangle"; o.frequency.value=f; o.connect(g); g.connect(audioCtx.destination);
+      const t=now+i*0.11; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+      o.start(t); o.stop(t+0.55); }); }
+
+  // ---- new-ruler banner ----
+  function showNewKing(name,message){ const b=document.getElementById("newKingBanner"); if(!b) return;
+    b.querySelector(".nk-name").textContent=name||"A new ruler";
+    b.querySelector(".nk-msg").textContent=message?("\u201C"+message+"\u201D"):"";
+    b.classList.remove("show"); void b.offsetWidth; b.classList.add("show"); }
+
+  // ---- challenger toast (live broadcast) ----
+  let challTimer=null;
+  function showChallenger(name){ const el=document.getElementById("challenger"); if(!el) return;
+    el.textContent="⚔️ "+(name?name:"A challenger")+" is challenging the throne…"; el.classList.add("show");
+    clearTimeout(challTimer); challTimer=setTimeout(()=>el.classList.remove("show"),4200); }
+
+  // ---- pantheon (past-season champions) ----
+  async function loadPantheon(){ const { data } = await db.from("pantheon").select("*"); const tb=document.getElementById("pantheonBody"); if(!tb) return;
+    if(!data || !data.length){ tb.innerHTML="<tr><td colspan='3' class='empty'>No season has ended yet. This season's champion will be immortalized here.</td></tr>"; return; }
+    tb.innerHTML=data.map(r=>"<tr><td>"+r.season+"</td><td>👑 "+(r.champion||"Anonymous")+"</td><td class='val'>"+fmt(r.total_cents)+"</td></tr>").join(""); }
+
+  // ---- season reset countdown ----
+  function updateSeason(){ const now=new Date(); const end=new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1));
+    const el=document.getElementById("seasonCountdown"); if(el) el.textContent="resets in "+durShort((end-now)/1000); }
+
+  loadThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard("spend"); loadPantheon(); updateSeason();
+  setInterval(updateSeason, 30000);
+  setInterval(loadPantheon, 60000);
   setInterval(loadPrice, 5000);
   setInterval(loadThrone, 20000);
   setInterval(()=>{ loadStats(); loadFeed(); }, 12000);
