@@ -8,177 +8,201 @@
 <meta property="og:title" content="Throne of the Internet" />
 <meta property="og:description" content="One person rules the internet at a time. Pay more than them to seize the throne." />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://thropn.vercel.app/og.png" />
+<meta property="og:image" content="https://thropn.vercel.app/api/og" />
 <meta property="og:url" content="https://thropn.vercel.app/" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Throne of the Internet" />
 <meta name="twitter:description" content="One person rules the internet at a time. Pay more than them to seize the throne." />
-<meta name="twitter:image" content="https://thropn.vercel.app/og.png" />
+<meta name="twitter:image" content="https://thropn.vercel.app/api/og" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800;900&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
 <style>
   :root{
-    --bg:#0a0a0c; --bg2:#111016; --ink:#ece6d6; --muted:#8a8576;
-    --gold:#d8b25e; --gold-bright:#f0d089; --gold-deep:#8a6d2a; --line:#262232;
-    --danger:#c8553d;
+    --bg:#070709; --ink:#efe9da; --muted:#938d7d;
+    --gold:#d8b25e; --gold-bright:#f4d68f; --gold-deep:#8a6d2a; --line:rgba(216,178,94,.16);
+    --glass:rgba(14,13,18,.55); --glass-strong:rgba(12,11,16,.74);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:var(--bg);color:var(--ink);font-family:'Spectral',serif}
-  body{
-    min-height:100vh;
-    background:
-      radial-gradient(1200px 700px at 50% -10%, rgba(216,178,94,.14), transparent 60%),
-      radial-gradient(900px 600px at 50% 110%, rgba(216,178,94,.06), transparent 60%),
-      var(--bg);
-    overflow-x:hidden;
-  }
-  body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.04;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-  .wrap{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:42px 22px 90px}
-  .topbar{display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:'Cormorant Garamond',serif;min-height:100vh;overflow-x:hidden}
+
+  /* live 3D throne room canvas */
+  #scene{position:fixed;inset:0;z-index:0;background:radial-gradient(900px 600px at 50% 0%,#16110a,#070709 70%)}
+  #scene canvas{display:block}
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 35%,transparent 55%,rgba(0,0,0,.55) 100%)}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  .wrap{position:relative;z-index:2;max-width:740px;margin:0 auto;padding:30px 22px 90px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted)}
   .topbar .live{display:flex;align-items:center;gap:7px}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 10px var(--gold-bright);animation:pulse 1.8s infinite}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 12px var(--gold-bright);animation:pulse 1.8s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
-  .crown{font-size:46px;text-align:center;margin:40px 0 6px;filter:drop-shadow(0 6px 24px rgba(216,178,94,.45));animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
-  h1{font-family:'Cinzel',serif;font-weight:900;text-align:center;font-size:clamp(30px,7vw,52px);letter-spacing:.02em;line-height:1.04;
-     background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,var(--gold-deep));-webkit-background-clip:text;background-clip:text;color:transparent;
-     animation:rise .9s .05s cubic-bezier(.2,.8,.2,1) both}
-  .tagline{text-align:center;color:var(--muted);font-size:15px;margin-top:12px;font-style:italic;animation:rise .9s .1s cubic-bezier(.2,.8,.2,1) both}
-  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  /* HERO over the 3D room */
+  .hero{min-height:62vh;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;padding-top:8vh}
+  h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(34px,9vw,68px);letter-spacing:.015em;line-height:1;
+     background:linear-gradient(100deg,var(--gold-deep),var(--gold-bright) 30%,#fff7e6 50%,var(--gold-bright) 70%,var(--gold-deep));
+     background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+     animation:shine 7s linear infinite, rise 1s cubic-bezier(.2,.8,.2,1) both;
+     text-shadow:0 0 40px rgba(216,178,94,.25)}
+  @keyframes shine{to{background-position:220% center}}
+  .tagline{color:#d9d2c0;font-size:clamp(15px,2.6vw,19px);margin-top:16px;font-style:italic;letter-spacing:.01em;
+     text-shadow:0 2px 20px rgba(0,0,0,.8);animation:rise 1s .1s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
-  /* global stats bar */
-  .stats{display:flex;justify-content:center;gap:0;margin:22px auto 0;flex-wrap:wrap;
-         font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.05em;color:var(--muted);
-         border:1px solid var(--line);border-radius:12px;max-width:560px;overflow:hidden}
-  .stats .s{flex:1 1 0;min-width:120px;text-align:center;padding:12px 10px}
+  .stats{display:flex;justify-content:center;margin:26px auto 0;flex-wrap:wrap;
+     font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;color:var(--muted);
+     border:1px solid var(--line);border-radius:14px;max-width:520px;overflow:hidden;
+     background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+     box-shadow:0 20px 60px -30px rgba(0,0,0,.9)}
+  .stats .s{flex:1 1 0;min-width:118px;text-align:center;padding:14px 10px;text-transform:uppercase}
   .stats .s + .s{border-left:1px solid var(--line)}
-  .stats .s b{display:block;font-size:18px;color:var(--gold-bright);font-weight:700;margin-bottom:2px}
+  .stats .s b{display:block;font-size:19px;color:var(--gold-bright);font-weight:700;margin-bottom:3px;letter-spacing:.02em}
 
-  /* recent coups ticker */
-  .ticker{margin:16px auto 0;max-width:560px;overflow:hidden;white-space:nowrap;position:relative;
-          -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
-          mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
-  .ticker .track{display:inline-block;padding-left:100%;animation:scroll 32s linear infinite;
-                 font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
-  .ticker .track .c{margin-right:38px}
+  .ticker{margin:14px auto 0;max-width:520px;overflow:hidden;white-space:nowrap;position:relative;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .ticker .track{display:inline-block;padding-left:100%;animation:scroll 34s linear infinite;
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted)}
+  .ticker .track .c{margin-right:40px}
   .ticker .track .c b{color:var(--gold)}
   @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 
-  .throne{
-    margin:34px 0 0;padding:34px 28px;text-align:center;position:relative;
-    border:1px solid var(--line);border-radius:18px;
-    background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.25));
-    box-shadow:0 30px 80px -40px rgba(216,178,94,.4), inset 0 1px 0 rgba(255,255,255,.04);
-  }
-  .throne .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
-  .king{font-family:'Cinzel',serif;font-weight:800;font-size:clamp(26px,6vw,40px);margin:14px 0 4px;color:var(--ink);word-break:break-word}
-  .message{font-size:clamp(17px,3.6vw,22px);font-style:italic;color:var(--ink);opacity:.92;margin:10px auto 2px;max-width:560px;line-height:1.45}
+  .panel{margin:30px 0 0;padding:32px 26px;position:relative;border:1px solid var(--line);border-radius:20px;
+    background:var(--glass-strong);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 40px 100px -50px rgba(216,178,94,.45), inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+  .panel::before{content:"";position:absolute;inset:0;border-radius:20px;padding:1px;pointer-events:none;
+    background:linear-gradient(140deg,rgba(216,178,94,.5),transparent 40%,transparent 60%,rgba(216,178,94,.3));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+
+  .throne{text-align:center}
+  .throne .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold)}
+  .king{font-family:'Cinzel',serif;font-weight:800;font-size:clamp(26px,6.5vw,42px);margin:14px 0 4px;color:#fff7e6;word-break:break-word;text-shadow:0 0 30px rgba(216,178,94,.35)}
+  .message{font-size:clamp(18px,3.8vw,24px);font-style:italic;color:var(--ink);opacity:.95;margin:8px auto 2px;max-width:560px;line-height:1.45}
   .message.has::before{content:"\201C"}.message.has::after{content:"\201D"}
-  .reign-meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);letter-spacing:.06em;margin-top:18px}
+  .reign-meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:18px}
   .reign-meta .t{color:var(--gold-bright)}
 
-  .cta{margin:26px 0 0;display:flex;flex-direction:column;gap:14px}
+  .cta{margin:24px 0 0;display:flex;flex-direction:column;gap:14px}
   .field{display:flex;flex-direction:column;gap:7px;text-align:left}
   .field label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-  input,textarea{
-    background:#08080a;border:1px solid var(--line);border-radius:11px;color:var(--ink);
-    font-family:'Spectral',serif;font-size:16px;padding:13px 15px;width:100%;resize:none;transition:border-color .2s}
-  input:focus,textarea:focus{outline:none;border-color:var(--gold-deep)}
+  input,textarea{background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:11px;color:var(--ink);
+    font-family:'Cormorant Garamond',serif;font-size:17px;padding:13px 15px;width:100%;resize:none;transition:border-color .2s,box-shadow .2s}
+  input:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(216,178,94,.12)}
   .count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-align:right}
 
-  .seize{
-    cursor:pointer;border:none;border-radius:12px;padding:18px;width:100%;
-    font-family:'Cinzel',serif;font-weight:800;font-size:18px;letter-spacing:.04em;color:#1a1408;
-    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 60%,var(--gold-deep));
-    box-shadow:0 16px 40px -16px rgba(216,178,94,.8);transition:transform .12s, filter .2s}
-  .seize:hover{filter:brightness(1.07)}.seize:active{transform:translateY(2px)}
+  .seize{position:relative;cursor:pointer;border:none;border-radius:13px;padding:19px;width:100%;overflow:hidden;
+    font-family:'Cinzel',serif;font-weight:800;font-size:18px;letter-spacing:.05em;color:#1a1408;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,var(--gold-deep));
+    box-shadow:0 18px 46px -16px rgba(216,178,94,.8);transition:transform .12s,filter .2s}
+  .seize:hover{filter:brightness(1.08)}.seize:active{transform:translateY(2px)}
   .seize:disabled{opacity:.55;cursor:wait}
   .seize .px{font-family:'JetBrains Mono',monospace}
-  .tension{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;letter-spacing:.04em;line-height:1.6}
+  .seize::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(110deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-18deg);animation:sheen 4.5s ease-in-out infinite}
+  @keyframes sheen{0%,60%{left:-60%}100%{left:130%}}
+  .tension{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;letter-spacing:.03em;line-height:1.6}
   .tension b{color:var(--gold)}
   .fineprint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.05em;line-height:1.7}
 
-  .won{display:none;margin:26px 0 0;padding:20px;border:1px solid var(--gold-deep);border-radius:14px;background:rgba(216,178,94,.07);text-align:center}
-  .won.show{display:block;animation:rise .5s both}
-  .share{display:inline-block;margin-top:12px;text-decoration:none;font-family:'Cinzel',serif;font-weight:700;color:#1a1408;background:linear-gradient(180deg,var(--gold-bright),var(--gold));padding:11px 20px;border-radius:10px}
+  .won{display:none;margin:30px 0 0;text-align:center}
+  .won.show{display:block;animation:rise .6s both}
+  .won .crowned{font-family:'Cinzel';font-weight:800;font-size:24px;color:var(--gold-bright);text-shadow:0 0 30px rgba(216,178,94,.5)}
+  .won p{color:var(--muted);font-size:15px;margin-top:8px}
+  .btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .share,.fortify{display:inline-block;text-decoration:none;cursor:pointer;border:none;font-family:'Cinzel',serif;font-weight:700;font-size:15px;padding:12px 22px;border-radius:11px}
+  .share{color:#1a1408;background:linear-gradient(180deg,var(--gold-bright),var(--gold))}
+  .fortify{color:var(--gold-bright);background:transparent;border:1px solid var(--gold-deep)}
+  .fortify:hover{background:rgba(216,178,94,.08)}
 
-  .boards{margin-top:64px}
-  .boards h2{font-family:'Cinzel',serif;font-weight:700;text-align:center;font-size:22px;color:var(--gold);letter-spacing:.04em;margin-bottom:8px}
-  .boards .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:26px}
-  .tabs{display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
-  .tab{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
-       border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px;cursor:pointer;transition:.2s}
+  .boards{margin-top:60px}
+  .boards h2{font-family:'Cinzel',serif;font-weight:700;text-align:center;font-size:24px;color:var(--gold);letter-spacing:.04em;margin-bottom:8px;text-shadow:0 0 24px rgba(216,178,94,.25)}
+  .boards .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px;font-style:italic}
+  .tabs{display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .tab{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line);background:rgba(0,0,0,.3);border-radius:999px;padding:9px 15px;cursor:pointer;transition:.2s}
   .tab.active{color:#1a1408;background:var(--gold);border-color:var(--gold)}
-  table{width:100%;border-collapse:collapse;font-size:15px}
-  th{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
-  td{padding:13px 8px;border-bottom:1px solid rgba(38,34,50,.5)}
+  table{width:100%;border-collapse:collapse;font-size:16px}
+  th{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:left;padding:11px 8px;border-bottom:1px solid var(--line)}
+  td{padding:14px 8px;border-bottom:1px solid rgba(216,178,94,.07)}
   td.rank{font-family:'Cinzel',serif;font-weight:800;color:var(--gold);width:42px}
   td.val{font-family:'JetBrains Mono',monospace;text-align:right;color:var(--gold-bright)}
-  tr:nth-child(1) td.rank{font-size:19px}
+  tr:nth-child(1) td.rank{font-size:20px}
   .empty{text-align:center;color:var(--muted);padding:26px;font-style:italic}
 
-  footer{margin-top:70px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;line-height:2}
-
-  #confetti{position:fixed;inset:0;pointer-events:none;z-index:50;display:none}
+  footer{margin-top:64px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.12em;line-height:2.1}
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:60;display:none}
+  @media (prefers-reduced-motion: reduce){ .seize::after{animation:none} h1{animation:none} }
 </style>
 </head>
 <body>
+<div id="scene"></div>
+<div class="vignette"></div>
+<div class="grain"></div>
 <canvas id="confetti"></canvas>
+
 <div class="wrap">
   <div class="topbar">
     <span>THRONE&nbsp;OF&nbsp;THE&nbsp;INTERNET</span>
     <span class="live"><span class="dot"></span> LIVE · SEASON 1</span>
   </div>
 
-  <div class="crown">👑</div>
-  <h1>One Ruler<br>At A Time</h1>
-  <p class="tagline">One person rules the internet. Pay more than them to seize the throne.</p>
+  <section class="hero">
+    <h1>One Ruler<br>At A Time</h1>
+    <p class="tagline">One soul rules the entire internet. Pay more than them — and the throne is yours.</p>
+    <div class="stats" id="stats">
+      <div class="s"><b id="stTotal">—</b>burned to rule</div>
+      <div class="s"><b id="stCoups">—</b>coups</div>
+      <div class="s"><b id="stLongest">—</b>longest reign</div>
+    </div>
+    <div class="ticker" id="ticker" style="display:none"><div class="track" id="tickerTrack"></div></div>
+  </section>
 
-  <div class="stats" id="stats">
-    <div class="s"><b id="stTotal">—</b>burned to rule</div>
-    <div class="s"><b id="stCoups">—</b>coups</div>
-    <div class="s"><b id="stLongest">—</b>longest reign</div>
-  </div>
-
-  <div class="ticker" id="ticker" style="display:none"><div class="track" id="tickerTrack"></div></div>
-
-  <section class="throne" id="throne">
+  <section class="panel throne" id="throne">
     <div class="label">CURRENTLY REIGNING</div>
     <div class="king" id="king">…</div>
     <div class="message" id="message"></div>
     <div class="reign-meta" id="meta"></div>
+
+    <div class="won" id="won">
+      <div class="crowned">👑 The crown is yours.</div>
+      <p>You rule until someone pays more. Fortify your reign or make them jealous.</p>
+      <div class="btnrow">
+        <a class="share" id="shareBtn" target="_blank" rel="noopener">Flex it on X →</a>
+        <button class="fortify" id="fortifyBtn">Fortify your reign — <span id="fortifyPx">…</span></button>
+      </div>
+    </div>
+
+    <form class="cta" id="form">
+      <div class="field">
+        <label for="name">Your name on the throne</label>
+        <input id="name" maxlength="60" placeholder="e.g. Maxime the First" required />
+      </div>
+      <div class="field">
+        <label for="msg">Your message to the world</label>
+        <textarea id="msg" maxlength="280" rows="2" placeholder="Say something the whole internet will read."></textarea>
+        <div class="count"><span id="c">0</span>/280</div>
+      </div>
+      <button class="seize" id="seize" type="submit">
+        SEIZE THE THRONE — <span class="px" id="price">…</span>
+      </button>
+      <div class="tension">The price falls the longer the throne sits. <b>Strike before someone else does.</b></div>
+      <div class="fineprint">
+        Secure checkout via Stripe · pay in your local currency<br>
+        If someone outbids you before payment clears, you're refunded automatically.
+      </div>
+    </form>
   </section>
-
-  <div class="won" id="won">
-    <div style="font-family:'Cinzel';font-weight:800;font-size:20px;color:var(--gold-bright)">👑 The crown is yours.</div>
-    <div style="color:var(--muted);font-size:14px;margin-top:6px">You rule until someone pays more. Make them jealous.</div>
-    <a class="share" id="shareBtn" target="_blank" rel="noopener">Flex it on X →</a>
-  </div>
-
-  <form class="cta" id="form">
-    <div class="field">
-      <label for="name">Your name on the throne</label>
-      <input id="name" maxlength="60" placeholder="e.g. Maxime the First" required />
-    </div>
-    <div class="field">
-      <label for="msg">Your message to the world</label>
-      <textarea id="msg" maxlength="280" rows="2" placeholder="Say something the whole internet will read."></textarea>
-      <div class="count"><span id="c">0</span>/280</div>
-    </div>
-    <button class="seize" id="seize" type="submit">
-      SEIZE THE THRONE — <span class="px" id="price">…</span>
-    </button>
-    <div class="tension" id="tension">The price falls the longer the throne sits. Strike before someone else does.</div>
-    <div class="fineprint">
-      Secure checkout via Stripe · pay in your local currency<br>
-      If someone outbids you before payment clears, you're refunded automatically.
-    </div>
-  </form>
 
   <section class="boards">
     <h2>The Hall of Kings</h2>
@@ -188,10 +212,7 @@
       <button class="tab" data-board="time">⏳ Longest Combined Reign</button>
       <button class="tab" data-board="longest">🏆 Longest Single Reign</button>
     </div>
-    <table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
   </section>
 
   <footer>
@@ -200,6 +221,161 @@
   </footer>
 </div>
 
+<!-- ============ LIVING 3D THRONE ROOM ============ -->
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+try {
+  const host = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  host.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x07060a, 0.045);
+
+  const camera = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, 0.1, 120);
+  camera.position.set(0, 2.4, 10);
+
+  // materials
+  const stone = new THREE.MeshStandardMaterial({ color: 0x14131b, roughness: 0.92, metalness: 0.06 });
+  const gold  = new THREE.MeshStandardMaterial({ color: 0xb8902f, roughness: 0.32, metalness: 0.95, emissive: 0x2a1d06, emissiveIntensity: 0.35 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x0c0c12, roughness: 0.5, metalness: 0.35 });
+
+  // floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), floorMat);
+  floor.rotation.x = -Math.PI / 2; scene.add(floor);
+
+  // columns receding down the hall
+  for (let side = -1; side <= 1; side += 2) {
+    for (let k = 0; k < 7; k++) {
+      const z = -1 - k * 3.4;
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 8, 18), stone);
+      col.position.set(side * 4.3, 4, z); scene.add(col);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 1.6), stone);
+      cap.position.set(side * 4.3, 8.1, z); scene.add(cap);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 1.6), stone);
+      base.position.set(side * 4.3, 0.25, z); scene.add(base);
+    }
+  }
+
+  // dais
+  const dais = new THREE.Group(); dais.position.set(0, 0, -7);
+  [[3.6, 0.4, 0.2], [2.8, 0.4, 0.6], [2.0, 0.4, 1.0]].forEach(([w, hgt, y], i) => {
+    const step = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, w), stone);
+    step.position.set(0, 0.2 + i * 0.4, 0); dais.add(step);
+  });
+  scene.add(dais);
+
+  // throne
+  const throne = new THREE.Group(); throne.position.set(0, 1.4, -7);
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.35, 1.6), gold); seat.position.y = 0.4; throne.add(seat);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(2.0, 3.0, 0.28), gold); back.position.set(0, 1.9, -0.66); throne.add(back);
+  for (const sx of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.9, 1.6), gold); arm.position.set(sx * 0.95, 0.9, 0); throne.add(arm);
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 12), gold); fin.position.set(sx * 0.95, 3.45, -0.66); throne.add(fin);
+  }
+  scene.add(throne);
+
+  // crown of light (the glow source for bloom)
+  const crown = new THREE.Group(); crown.position.set(0, 6.0, -7);
+  const crownMat = new THREE.MeshStandardMaterial({ color: 0x3a2c0c, metalness: 1, roughness: 0.25, emissive: 0xf4d68f, emissiveIntensity: 1.9 });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.07, 14, 40), crownMat);
+  ring.rotation.x = Math.PI / 2; crown.add(ring);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.5, 10), crownMat);
+    spike.position.set(Math.cos(a) * 0.62, 0.28, Math.sin(a) * 0.62); crown.add(spike);
+    const jewel = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), crownMat);
+    jewel.position.set(Math.cos(a) * 0.62, 0.55, Math.sin(a) * 0.62); crown.add(jewel);
+  }
+  scene.add(crown);
+
+  // volumetric-ish light shafts (additive)
+  const shafts = [];
+  for (let i = 0; i < 3; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: 0xe7c477, transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const shaft = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 13), m);
+    shaft.position.set((i - 1) * 1.5, 6, -7 + (i - 1) * 0.4);
+    shaft.rotation.z = (i - 1) * 0.12; scene.add(shaft); shafts.push(shaft);
+  }
+
+  // dust motes
+  const N = 340, pos = new Float32Array(N * 3), vel = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    pos[i*3] = (Math.random() - 0.5) * 18; pos[i*3+1] = Math.random() * 10; pos[i*3+2] = -8 + (Math.random() - 0.5) * 12;
+    vel[i] = 0.15 + Math.random() * 0.35;
+  }
+  const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xf0d28a, size: 0.045, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending }));
+  scene.add(dust);
+
+  // lights (decay 0 => predictable, non physical falloff)
+  scene.add(new THREE.AmbientLight(0x2a2740, 0.7));
+  scene.add(new THREE.HemisphereLight(0x3a3354, 0x0a0a10, 0.6));
+  const key = new THREE.SpotLight(0xffe6ad, 6, 40, Math.PI / 5, 0.5, 0); key.position.set(0, 13, -3); key.target = throne; scene.add(key); scene.add(key.target);
+  const glow = new THREE.PointLight(0xffd27a, 2.2, 20, 0); glow.position.set(0, 5.4, -6.4); scene.add(glow);
+  const torches = [];
+  for (const sx of [-4.3, 4.3]) { const tl = new THREE.PointLight(0xff8a3c, 1.4, 16, 0); tl.position.set(sx, 4.4, -4); scene.add(tl); torches.push(tl); }
+
+  // post-processing bloom
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.6, 0.62);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+
+  // interaction + flash
+  let mx = 0, my = 0, flash = 0;
+  addEventListener('pointermove', (e) => { mx = (e.clientX / innerWidth - 0.5); my = (e.clientY / innerHeight - 0.5); }, { passive: true });
+  window.throneFlash = () => { flash = 1; };
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+  });
+
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    if (document.hidden) return;
+    const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+
+    camera.position.x += (Math.sin(t * 0.16) * 0.7 + mx * 1.1 - camera.position.x) * 0.04;
+    camera.position.y += (2.4 + Math.sin(t * 0.22) * 0.18 - my * 0.6 - camera.position.y) * 0.04;
+    camera.lookAt(0, 2.8, -7);
+
+    crown.rotation.y += dt * 0.45;
+    crown.position.y = 6.0 + Math.sin(t * 1.1) * 0.13;
+    crownMat.emissiveIntensity = 1.9 + Math.sin(t * 2.2) * 0.18 + flash * 2.8;
+    glow.intensity = 2.2 + flash * 4;
+    bloom.strength = 0.85 + flash * 0.9;
+    flash *= 0.94;
+
+    shafts.forEach((s, i) => { s.material.opacity = 0.05 + Math.sin(t * 0.5 + i) * 0.025; });
+    torches.forEach((tl, i) => { tl.intensity = 1.3 + Math.sin(t * 9 + i * 2) * 0.3 + Math.random() * 0.15; });
+
+    const p = dustGeo.attributes.position.array;
+    for (let i = 0; i < N; i++) { p[i*3+1] += vel[i] * dt; if (p[i*3+1] > 10) p[i*3+1] = 0; }
+    dustGeo.attributes.position.needsUpdate = true;
+
+    composer.render();
+  }
+  animate();
+} catch (err) {
+  console.warn('3D throne room unavailable, falling back to flat background.', err);
+}
+</script>
+
+<!-- ============ DATA + UI ============ -->
 <script>
   const SUPABASE_URL = "https://sbzkzisukdglwgbompay.supabase.co";
   const SUPABASE_KEY = "sb_publishable_hVy7e7K0Ld8SJxa-HnO0_A_HzZFKpbP";
@@ -211,10 +387,9 @@
     if(d) return d+"d "+h+"h"; if(h) return h+"h "+m+"m"; if(m) return m+"m "+ss+"s"; return ss+"s"; };
   const durShort = (s) => { s=Math.max(0,Math.floor(s)); const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
     if(d) return d+"d"; if(h) return h+"h"; if(m) return m+"m"; return s+"s"; };
-  const ago = (iso) => { const s=(Date.now()-new Date(iso).getTime())/1000; return durShort(s)+" ago"; };
+  const ago = (iso) => durShort((Date.now()-new Date(iso).getTime())/1000)+" ago";
 
-  // ---- Live throne (with per-second ticking reign timer) ----
-  let throne = null;
+  let throne = null, lastKing = null;
   function paintThrone(){
     if(!throne) return;
     document.getElementById("king").textContent = throne.display_name || "The Throne";
@@ -223,26 +398,29 @@
     msgEl.textContent = approved ? throne.message : "message under review";
     msgEl.classList.toggle("has", !!approved);
     const since = new Date(throne.crowned_at).getTime();
-    document.getElementById("meta").innerHTML =
-      "has held the crown for <span class='t'>" + dur((Date.now()-since)/1000) + "</span>";
+    document.getElementById("meta").innerHTML = "has held the crown for <span class='t'>" + dur((Date.now()-since)/1000) + "</span>";
   }
   async function loadThrone(){
     const { data } = await db.from("throne_current").select("*").eq("id",1).single();
-    if(data){ throne = data; paintThrone(); }
+    if(data){
+      if(lastKing && data.display_name !== lastKing && window.throneFlash) window.throneFlash();
+      lastKing = data.display_name; throne = data; paintThrone();
+    }
   }
   db.channel("throne")
     .on("postgres_changes",{event:"*",schema:"public",table:"throne_current"},
-        (p)=>{ throne=p.new; paintThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard(currentBoard); })
+      (p)=>{ if(window.throneFlash) window.throneFlash(); throne=p.new; lastKing=p.new.display_name; paintThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard(currentBoard); })
     .subscribe();
-  setInterval(paintThrone, 1000); // ticking timer
+  setInterval(paintThrone, 1000);
 
-  // ---- Live price ----
+  let priceCents = null;
   async function loadPrice(){
     const { data, error } = await db.rpc("throne_required_cents");
-    if(!error && data!=null) document.getElementById("price").textContent = fmt(Number(data));
+    if(!error && data!=null){ priceCents = Number(data);
+      document.getElementById("price").textContent = fmt(priceCents);
+      document.getElementById("fortifyPx").textContent = "+"+fmt(priceCents);
+    }
   }
-
-  // ---- Global stats (social proof) ----
   async function loadStats(){
     const { data } = await db.from("throne_stats").select("*").single();
     if(!data) return;
@@ -250,19 +428,15 @@
     document.getElementById("stCoups").textContent  = Number(data.total_coups).toLocaleString();
     document.getElementById("stLongest").textContent = durShort(Number(data.longest_reign_seconds));
   }
-
-  // ---- Recent coups ticker ----
   async function loadFeed(){
     const { data } = await db.from("recent_reigns").select("*");
     const t = document.getElementById("ticker"), tr = document.getElementById("tickerTrack");
     if(!data || !data.length){ t.style.display="none"; return; }
     t.style.display="block";
-    const items = data.map(r =>
-      "<span class='c'>👑 <b>"+(r.name||"Anonymous")+"</b> ruled "+durShort(r.duration_seconds)+" · dethroned "+ago(r.ended_at)+"</span>");
-    tr.innerHTML = items.join("") + items.join(""); // duplicate for seamless loop
+    const items = data.map(r => "<span class='c'>👑 <b>"+(r.name||"Anonymous")+"</b> ruled "+durShort(r.duration_seconds)+" · dethroned "+ago(r.ended_at)+"</span>");
+    tr.innerHTML = items.join("") + items.join("");
   }
 
-  // ---- Leaderboards ----
   let currentBoard = "spend";
   const boardCfg = {
     spend:  { table:"leaderboard_spend",  head:["#","Ruler","Total spent"], val:r=>fmt(r.total_cents) },
@@ -270,71 +444,70 @@
     longest:{ table:"leaderboard_longest",head:["#","Ruler","Single reign"], val:r=>dur(r.duration_seconds) },
   };
   async function loadBoard(key){
-    currentBoard = key;
-    const cfg = boardCfg[key];
-    document.getElementById("thead").innerHTML =
-      "<tr>"+cfg.head.map((h,i)=>"<th"+(i===2?" style='text-align:right'":"")+">"+h+"</th>").join("")+"</tr>";
+    currentBoard = key; const cfg = boardCfg[key];
+    document.getElementById("thead").innerHTML = "<tr>"+cfg.head.map((h,i)=>"<th"+(i===2?" style='text-align:right'":"")+">"+h+"</th>").join("")+"</tr>";
     const { data } = await db.from(cfg.table).select("*");
     const tb = document.getElementById("tbody");
     if(!data || !data.length){ tb.innerHTML = "<tr><td colspan='3' class='empty'>No reign has ended yet. Be the first legend.</td></tr>"; return; }
-    tb.innerHTML = data.map((r,i)=>
-      "<tr><td class='rank'>"+(i+1)+"</td><td>"+(r.name||"Anonymous")+"</td><td class='val'>"+cfg.val(r)+"</td></tr>").join("");
+    tb.innerHTML = data.map((r,i)=> "<tr><td class='rank'>"+(i+1)+"</td><td>"+(r.name||"Anonymous")+"</td><td class='val'>"+cfg.val(r)+"</td></tr>").join("");
   }
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-    b.classList.add("active"); loadBoard(b.dataset.board);
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active")); b.classList.add("active"); loadBoard(b.dataset.board);
   }));
 
-  // ---- Seize the throne ----
   document.getElementById("msg").addEventListener("input",e=>document.getElementById("c").textContent=e.target.value.length);
-  document.getElementById("form").addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    const btn = document.getElementById("seize");
-    const displayName = document.getElementById("name").value.trim();
-    const message = document.getElementById("msg").value.trim();
-    if(!displayName){ document.getElementById("name").focus(); return; }
-    btn.disabled = true; const old = btn.innerHTML; btn.innerHTML = "Preparing checkout…";
+
+  async function startCheckout(payload, btn){
+    const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = "Preparing checkout…";
     try{
       const res = await fetch(SUPABASE_URL+"/functions/v1/checkout",{
         method:"POST",
         headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY},
-        body: JSON.stringify({ displayName, message })
+        body: JSON.stringify(payload)
       });
       const out = await res.json();
       if(out.url){ window.location.href = out.url; }
       else { alert(out.error || "Something went wrong. Try again."); btn.disabled=false; btn.innerHTML=old; }
     }catch(err){ alert("Network error. Try again."); btn.disabled=false; btn.innerHTML=old; }
-  });
+  }
 
-  // ---- Confetti ----
+  document.getElementById("form").addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const displayName = document.getElementById("name").value.trim();
+    const message = document.getElementById("msg").value.trim();
+    if(!displayName){ document.getElementById("name").focus(); return; }
+    startCheckout({ action:"take", displayName, message }, document.getElementById("seize"));
+  });
+  document.getElementById("fortifyBtn").addEventListener("click", ()=> startCheckout({ action:"fortify" }, document.getElementById("fortifyBtn")));
+
+  // confetti
   function confetti(){
     const cv=document.getElementById("confetti"), ctx=cv.getContext("2d");
     cv.style.display="block"; cv.width=innerWidth; cv.height=innerHeight;
-    const cols=["#f0d089","#d8b25e","#8a6d2a","#ece6d6"];
-    let p=Array.from({length:160},()=>({x:innerWidth/2,y:innerHeight/3,
-      vx:(Math.random()-.5)*14,vy:Math.random()*-15-4,g:.4+Math.random()*.3,
-      s:4+Math.random()*6,c:cols[Math.random()*cols.length|0],r:Math.random()*6,vr:(Math.random()-.5)*.4}));
+    const cols=["#f4d68f","#d8b25e","#8a6d2a","#fff7e6"];
+    let p=Array.from({length:180},()=>({x:innerWidth/2,y:innerHeight/3,vx:(Math.random()-.5)*15,vy:Math.random()*-16-4,
+      g:.4+Math.random()*.3,s:4+Math.random()*7,c:cols[Math.random()*cols.length|0],r:Math.random()*6,vr:(Math.random()-.5)*.4}));
     let t=0;(function loop(){ctx.clearRect(0,0,cv.width,cv.height);t++;
-      p.forEach(o=>{o.vy+=o.g;o.x+=o.vx;o.y+=o.vy;o.r+=o.vr;
-        ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.r);ctx.fillStyle=o.c;ctx.fillRect(-o.s/2,-o.s/2,o.s,o.s*.6);ctx.restore();});
-      if(t<140)requestAnimationFrame(loop);else cv.style.display="none";})();
+      p.forEach(o=>{o.vy+=o.g;o.x+=o.vx;o.y+=o.vy;o.r+=o.vr;ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.r);ctx.fillStyle=o.c;ctx.fillRect(-o.s/2,-o.s/2,o.s,o.s*.6);ctx.restore();});
+      if(t<150)requestAnimationFrame(loop);else cv.style.display="none";})();
   }
 
-  // ---- Victory state after Stripe redirect ----
-  if(new URLSearchParams(location.search).get("crowned")==="1"){
+  const params = new URLSearchParams(location.search);
+  if(params.get("crowned")==="1"){
     document.getElementById("won").classList.add("show");
     document.getElementById("form").style.display="none";
+    if(window.throneFlash) window.throneFlash();
     confetti();
     setTimeout(async ()=>{
       const { data } = await db.from("throne_current").select("display_name").eq("id",1).single();
-      const name = data?.display_name || "me";
       const txt = encodeURIComponent('I just seized the Throne of the Internet 👑 Dethrone me if you dare:');
-      document.getElementById("shareBtn").href =
-        "https://twitter.com/intent/tweet?text="+txt+"&url="+encodeURIComponent(location.origin);
-    }, 400);
+      document.getElementById("shareBtn").href = "https://twitter.com/intent/tweet?text="+txt+"&url="+encodeURIComponent(location.origin);
+    }, 300);
+  } else if(params.get("fortified")==="1"){
+    document.getElementById("meta").innerHTML += " · <span class='t'>reign fortified ⚔️</span>";
+    confetti();
   }
 
-  // ---- Boot ----
   loadThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard("spend");
   setInterval(loadPrice, 5000);
   setInterval(loadThrone, 20000);
