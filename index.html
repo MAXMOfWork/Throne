@@ -8,7 +8,12 @@
 <meta property="og:title" content="Throne of the Internet" />
 <meta property="og:description" content="One person rules the internet at a time. Pay more than them to seize the throne." />
 <meta property="og:type" content="website" />
+<meta property="og:image" content="https://thropn.vercel.app/og.png" />
+<meta property="og:url" content="https://thropn.vercel.app/" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Throne of the Internet" />
+<meta name="twitter:description" content="One person rules the internet at a time. Pay more than them to seize the throne." />
+<meta name="twitter:image" content="https://thropn.vercel.app/og.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800;900&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -39,15 +44,33 @@
   .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 10px var(--gold-bright);animation:pulse 1.8s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
-  .crown{font-size:46px;text-align:center;margin:46px 0 6px;filter:drop-shadow(0 6px 24px rgba(216,178,94,.45));animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+  .crown{font-size:46px;text-align:center;margin:40px 0 6px;filter:drop-shadow(0 6px 24px rgba(216,178,94,.45));animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
   h1{font-family:'Cinzel',serif;font-weight:900;text-align:center;font-size:clamp(30px,7vw,52px);letter-spacing:.02em;line-height:1.04;
      background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,var(--gold-deep));-webkit-background-clip:text;background-clip:text;color:transparent;
      animation:rise .9s .05s cubic-bezier(.2,.8,.2,1) both}
   .tagline{text-align:center;color:var(--muted);font-size:15px;margin-top:12px;font-style:italic;animation:rise .9s .1s cubic-bezier(.2,.8,.2,1) both}
   @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
+  /* global stats bar */
+  .stats{display:flex;justify-content:center;gap:0;margin:22px auto 0;flex-wrap:wrap;
+         font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.05em;color:var(--muted);
+         border:1px solid var(--line);border-radius:12px;max-width:560px;overflow:hidden}
+  .stats .s{flex:1 1 0;min-width:120px;text-align:center;padding:12px 10px}
+  .stats .s + .s{border-left:1px solid var(--line)}
+  .stats .s b{display:block;font-size:18px;color:var(--gold-bright);font-weight:700;margin-bottom:2px}
+
+  /* recent coups ticker */
+  .ticker{margin:16px auto 0;max-width:560px;overflow:hidden;white-space:nowrap;position:relative;
+          -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .ticker .track{display:inline-block;padding-left:100%;animation:scroll 32s linear infinite;
+                 font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+  .ticker .track .c{margin-right:38px}
+  .ticker .track .c b{color:var(--gold)}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+
   .throne{
-    margin:40px 0 0;padding:34px 28px;text-align:center;position:relative;
+    margin:34px 0 0;padding:34px 28px;text-align:center;position:relative;
     border:1px solid var(--line);border-radius:18px;
     background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.25));
     box-shadow:0 30px 80px -40px rgba(216,178,94,.4), inset 0 1px 0 rgba(255,255,255,.04);
@@ -55,10 +78,11 @@
   .throne .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
   .king{font-family:'Cinzel',serif;font-weight:800;font-size:clamp(26px,6vw,40px);margin:14px 0 4px;color:var(--ink);word-break:break-word}
   .message{font-size:clamp(17px,3.6vw,22px);font-style:italic;color:var(--ink);opacity:.92;margin:10px auto 2px;max-width:560px;line-height:1.45}
-  .message::before{content:"\201C"}.message::after{content:"\201D"}
-  .reign-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.08em;margin-top:18px}
+  .message.has::before{content:"\201C"}.message.has::after{content:"\201D"}
+  .reign-meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);letter-spacing:.06em;margin-top:18px}
+  .reign-meta .t{color:var(--gold-bright)}
 
-  .cta{margin:30px 0 0;display:flex;flex-direction:column;gap:14px}
+  .cta{margin:26px 0 0;display:flex;flex-direction:column;gap:14px}
   .field{display:flex;flex-direction:column;gap:7px;text-align:left}
   .field label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
   input,textarea{
@@ -75,6 +99,8 @@
   .seize:hover{filter:brightness(1.07)}.seize:active{transform:translateY(2px)}
   .seize:disabled{opacity:.55;cursor:wait}
   .seize .px{font-family:'JetBrains Mono',monospace}
+  .tension{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;letter-spacing:.04em;line-height:1.6}
+  .tension b{color:var(--gold)}
   .fineprint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.05em;line-height:1.7}
 
   .won{display:none;margin:26px 0 0;padding:20px;border:1px solid var(--gold-deep);border-radius:14px;background:rgba(216,178,94,.07);text-align:center}
@@ -97,9 +123,12 @@
   .empty{text-align:center;color:var(--muted);padding:26px;font-style:italic}
 
   footer{margin-top:70px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;line-height:2}
+
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:50;display:none}
 </style>
 </head>
 <body>
+<canvas id="confetti"></canvas>
 <div class="wrap">
   <div class="topbar">
     <span>THRONE&nbsp;OF&nbsp;THE&nbsp;INTERNET</span>
@@ -109,6 +138,14 @@
   <div class="crown">👑</div>
   <h1>One Ruler<br>At A Time</h1>
   <p class="tagline">One person rules the internet. Pay more than them to seize the throne.</p>
+
+  <div class="stats" id="stats">
+    <div class="s"><b id="stTotal">—</b>burned to rule</div>
+    <div class="s"><b id="stCoups">—</b>coups</div>
+    <div class="s"><b id="stLongest">—</b>longest reign</div>
+  </div>
+
+  <div class="ticker" id="ticker" style="display:none"><div class="track" id="tickerTrack"></div></div>
 
   <section class="throne" id="throne">
     <div class="label">CURRENTLY REIGNING</div>
@@ -136,6 +173,7 @@
     <button class="seize" id="seize" type="submit">
       SEIZE THE THRONE — <span class="px" id="price">…</span>
     </button>
+    <div class="tension" id="tension">The price falls the longer the throne sits. Strike before someone else does.</div>
     <div class="fineprint">
       Secure checkout via Stripe · pay in your local currency<br>
       If someone outbids you before payment clears, you're refunded automatically.
@@ -163,38 +201,65 @@
 </div>
 
 <script>
-  // ---- Supabase wiring (publishable key is safe to expose client-side) ----
   const SUPABASE_URL = "https://sbzkzisukdglwgbompay.supabase.co";
   const SUPABASE_KEY = "sb_publishable_hVy7e7K0Ld8SJxa-HnO0_A_HzZFKpbP";
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const fmt = (c) => "$" + (c/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  const dur = (s) => { s=Math.max(0,s|0); const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
-    if(d) return d+"d "+h+"h"; if(h) return h+"h "+m+"m"; if(m) return m+"m"; return s+"s"; };
+  const fmtShort = (c) => { const v=c/100; return v>=1000 ? "$"+(v/1000).toFixed(1)+"k" : "$"+v.toFixed(2); };
+  const dur = (s) => { s=Math.max(0,Math.floor(s)); const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),ss=s%60;
+    if(d) return d+"d "+h+"h"; if(h) return h+"h "+m+"m"; if(m) return m+"m "+ss+"s"; return ss+"s"; };
+  const durShort = (s) => { s=Math.max(0,Math.floor(s)); const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+    if(d) return d+"d"; if(h) return h+"h"; if(m) return m+"m"; return s+"s"; };
+  const ago = (iso) => { const s=(Date.now()-new Date(iso).getTime())/1000; return durShort(s)+" ago"; };
 
-  // ---- Live throne ----
-  function renderThrone(t){
-    if(!t) return;
-    document.getElementById("king").textContent = t.display_name || "The Throne";
+  // ---- Live throne (with per-second ticking reign timer) ----
+  let throne = null;
+  function paintThrone(){
+    if(!throne) return;
+    document.getElementById("king").textContent = throne.display_name || "The Throne";
     const msgEl = document.getElementById("message");
-    msgEl.textContent = (t.message_status === "approved") ? (t.message || "") : "message under review";
-    const since = new Date(t.crowned_at);
-    document.getElementById("meta").textContent =
-      "crowned " + since.toLocaleString() + " · held the crown for " + dur((Date.now()-since.getTime())/1000);
+    const approved = throne.message_status === "approved" && throne.message;
+    msgEl.textContent = approved ? throne.message : "message under review";
+    msgEl.classList.toggle("has", !!approved);
+    const since = new Date(throne.crowned_at).getTime();
+    document.getElementById("meta").innerHTML =
+      "has held the crown for <span class='t'>" + dur((Date.now()-since)/1000) + "</span>";
   }
   async function loadThrone(){
     const { data } = await db.from("throne_current").select("*").eq("id",1).single();
-    renderThrone(data);
+    if(data){ throne = data; paintThrone(); }
   }
   db.channel("throne")
     .on("postgres_changes",{event:"*",schema:"public",table:"throne_current"},
-        (p)=>{ renderThrone(p.new); loadPrice(); loadBoard(currentBoard); })
+        (p)=>{ throne=p.new; paintThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard(currentBoard); })
     .subscribe();
+  setInterval(paintThrone, 1000); // ticking timer
 
-  // ---- Live price (decays over time -> refresh) ----
+  // ---- Live price ----
   async function loadPrice(){
     const { data, error } = await db.rpc("throne_required_cents");
     if(!error && data!=null) document.getElementById("price").textContent = fmt(Number(data));
+  }
+
+  // ---- Global stats (social proof) ----
+  async function loadStats(){
+    const { data } = await db.from("throne_stats").select("*").single();
+    if(!data) return;
+    document.getElementById("stTotal").textContent  = fmtShort(Number(data.total_cents));
+    document.getElementById("stCoups").textContent  = Number(data.total_coups).toLocaleString();
+    document.getElementById("stLongest").textContent = durShort(Number(data.longest_reign_seconds));
+  }
+
+  // ---- Recent coups ticker ----
+  async function loadFeed(){
+    const { data } = await db.from("recent_reigns").select("*");
+    const t = document.getElementById("ticker"), tr = document.getElementById("tickerTrack");
+    if(!data || !data.length){ t.style.display="none"; return; }
+    t.style.display="block";
+    const items = data.map(r =>
+      "<span class='c'>👑 <b>"+(r.name||"Anonymous")+"</b> ruled "+durShort(r.duration_seconds)+" · dethroned "+ago(r.ended_at)+"</span>");
+    tr.innerHTML = items.join("") + items.join(""); // duplicate for seamless loop
   }
 
   // ---- Leaderboards ----
@@ -241,10 +306,25 @@
     }catch(err){ alert("Network error. Try again."); btn.disabled=false; btn.innerHTML=old; }
   });
 
+  // ---- Confetti ----
+  function confetti(){
+    const cv=document.getElementById("confetti"), ctx=cv.getContext("2d");
+    cv.style.display="block"; cv.width=innerWidth; cv.height=innerHeight;
+    const cols=["#f0d089","#d8b25e","#8a6d2a","#ece6d6"];
+    let p=Array.from({length:160},()=>({x:innerWidth/2,y:innerHeight/3,
+      vx:(Math.random()-.5)*14,vy:Math.random()*-15-4,g:.4+Math.random()*.3,
+      s:4+Math.random()*6,c:cols[Math.random()*cols.length|0],r:Math.random()*6,vr:(Math.random()-.5)*.4}));
+    let t=0;(function loop(){ctx.clearRect(0,0,cv.width,cv.height);t++;
+      p.forEach(o=>{o.vy+=o.g;o.x+=o.vx;o.y+=o.vy;o.r+=o.vr;
+        ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.r);ctx.fillStyle=o.c;ctx.fillRect(-o.s/2,-o.s/2,o.s,o.s*.6);ctx.restore();});
+      if(t<140)requestAnimationFrame(loop);else cv.style.display="none";})();
+  }
+
   // ---- Victory state after Stripe redirect ----
   if(new URLSearchParams(location.search).get("crowned")==="1"){
     document.getElementById("won").classList.add("show");
     document.getElementById("form").style.display="none";
+    confetti();
     setTimeout(async ()=>{
       const { data } = await db.from("throne_current").select("display_name").eq("id",1).single();
       const name = data?.display_name || "me";
@@ -254,10 +334,11 @@
     }, 400);
   }
 
-  // ---- Boot + refresh price every 5s (it decays) ----
-  loadThrone(); loadPrice(); loadBoard("spend");
+  // ---- Boot ----
+  loadThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard("spend");
   setInterval(loadPrice, 5000);
-  setInterval(loadThrone, 15000);
+  setInterval(loadThrone, 20000);
+  setInterval(()=>{ loadStats(); loadFeed(); }, 12000);
 </script>
 </body>
 </html>
