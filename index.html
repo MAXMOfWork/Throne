@@ -49,7 +49,7 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
   /* HERO over the 3D room */
-  .hero{min-height:62vh;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;padding-top:8vh}
+  .hero{min-height:62vh;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;padding-top:15vh}
   h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(34px,9vw,68px);letter-spacing:.015em;line-height:1;
      background:linear-gradient(100deg,var(--gold-deep),var(--gold-bright) 30%,#fff7e6 50%,var(--gold-bright) 70%,var(--gold-deep));
      background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
@@ -381,7 +381,7 @@ try {
   const SUPABASE_KEY = "sb_publishable_hVy7e7K0Ld8SJxa-HnO0_A_HzZFKpbP";
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const fmt = (c) => "$" + (c/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt = (c) => "$" + (c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const fmtShort = (c) => { const v=c/100; return v>=1000 ? "$"+(v/1000).toFixed(1)+"k" : "$"+v.toFixed(2); };
   const dur = (s) => { s=Math.max(0,Math.floor(s)); const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),ss=s%60;
     if(d) return d+"d "+h+"h"; if(h) return h+"h "+m+"m"; if(m) return m+"m "+ss+"s"; return ss+"s"; };
@@ -499,9 +499,10 @@ try {
     if(window.throneFlash) window.throneFlash();
     confetti();
     setTimeout(async ()=>{
-      const { data } = await db.from("throne_current").select("display_name").eq("id",1).single();
+      const { data } = await db.from("throne_current").select("display_name,reign_token").eq("id",1).single();
+      const kingUrl = location.origin + "/k/" + (data?.reign_token || "");
       const txt = encodeURIComponent('I just seized the Throne of the Internet 👑 Dethrone me if you dare:');
-      document.getElementById("shareBtn").href = "https://twitter.com/intent/tweet?text="+txt+"&url="+encodeURIComponent(location.origin);
+      document.getElementById("shareBtn").href = "https://twitter.com/intent/tweet?text="+txt+"&url="+encodeURIComponent(kingUrl);
     }, 300);
   } else if(params.get("fortified")==="1"){
     document.getElementById("meta").innerHTML += " · <span class='t'>reign fortified ⚔️</span>";
