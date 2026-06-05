@@ -1,0 +1,7 @@
+{
+  "name": "throne-of-the-internet",
+  "private": true,
+  "dependencies": {
+    "@vercel/og": "^0.6.5"
+  }
+}
