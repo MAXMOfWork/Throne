@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Throne of the Internet — one ruler at a time</title>
+<meta name="description" content="One person rules the internet at a time. Pay more than them to take the throne." />
+<meta property="og:title" content="Throne of the Internet" />
+<meta property="og:description" content="One person rules the internet at a time. Pay more than them to seize the throne." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800;900&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0a0a0c; --bg2:#111016; --ink:#ece6d6; --muted:#8a8576;
+    --gold:#d8b25e; --gold-bright:#f0d089; --gold-deep:#8a6d2a; --line:#262232;
+    --danger:#c8553d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:'Spectral',serif}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 700px at 50% -10%, rgba(216,178,94,.14), transparent 60%),
+      radial-gradient(900px 600px at 50% 110%, rgba(216,178,94,.06), transparent 60%),
+      var(--bg);
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:42px 22px 90px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  .topbar .live{display:flex;align-items:center;gap:7px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 10px var(--gold-bright);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .crown{font-size:46px;text-align:center;margin:46px 0 6px;filter:drop-shadow(0 6px 24px rgba(216,178,94,.45));animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+  h1{font-family:'Cinzel',serif;font-weight:900;text-align:center;font-size:clamp(30px,7vw,52px);letter-spacing:.02em;line-height:1.04;
+     background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,var(--gold-deep));-webkit-background-clip:text;background-clip:text;color:transparent;
+     animation:rise .9s .05s cubic-bezier(.2,.8,.2,1) both}
+  .tagline{text-align:center;color:var(--muted);font-size:15px;margin-top:12px;font-style:italic;animation:rise .9s .1s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .throne{
+    margin:40px 0 0;padding:34px 28px;text-align:center;position:relative;
+    border:1px solid var(--line);border-radius:18px;
+    background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(0,0,0,.25));
+    box-shadow:0 30px 80px -40px rgba(216,178,94,.4), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .throne .label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+  .king{font-family:'Cinzel',serif;font-weight:800;font-size:clamp(26px,6vw,40px);margin:14px 0 4px;color:var(--ink);word-break:break-word}
+  .message{font-size:clamp(17px,3.6vw,22px);font-style:italic;color:var(--ink);opacity:.92;margin:10px auto 2px;max-width:560px;line-height:1.45}
+  .message::before{content:"\201C"}.message::after{content:"\201D"}
+  .reign-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.08em;margin-top:18px}
+
+  .cta{margin:30px 0 0;display:flex;flex-direction:column;gap:14px}
+  .field{display:flex;flex-direction:column;gap:7px;text-align:left}
+  .field label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  input,textarea{
+    background:#08080a;border:1px solid var(--line);border-radius:11px;color:var(--ink);
+    font-family:'Spectral',serif;font-size:16px;padding:13px 15px;width:100%;resize:none;transition:border-color .2s}
+  input:focus,textarea:focus{outline:none;border-color:var(--gold-deep)}
+  .count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-align:right}
+
+  .seize{
+    cursor:pointer;border:none;border-radius:12px;padding:18px;width:100%;
+    font-family:'Cinzel',serif;font-weight:800;font-size:18px;letter-spacing:.04em;color:#1a1408;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 60%,var(--gold-deep));
+    box-shadow:0 16px 40px -16px rgba(216,178,94,.8);transition:transform .12s, filter .2s}
+  .seize:hover{filter:brightness(1.07)}.seize:active{transform:translateY(2px)}
+  .seize:disabled{opacity:.55;cursor:wait}
+  .seize .px{font-family:'JetBrains Mono',monospace}
+  .fineprint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.05em;line-height:1.7}
+
+  .won{display:none;margin:26px 0 0;padding:20px;border:1px solid var(--gold-deep);border-radius:14px;background:rgba(216,178,94,.07);text-align:center}
+  .won.show{display:block;animation:rise .5s both}
+  .share{display:inline-block;margin-top:12px;text-decoration:none;font-family:'Cinzel',serif;font-weight:700;color:#1a1408;background:linear-gradient(180deg,var(--gold-bright),var(--gold));padding:11px 20px;border-radius:10px}
+
+  .boards{margin-top:64px}
+  .boards h2{font-family:'Cinzel',serif;font-weight:700;text-align:center;font-size:22px;color:var(--gold);letter-spacing:.04em;margin-bottom:8px}
+  .boards .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:26px}
+  .tabs{display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+  .tab{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+       border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px;cursor:pointer;transition:.2s}
+  .tab.active{color:#1a1408;background:var(--gold);border-color:var(--gold)}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+  td{padding:13px 8px;border-bottom:1px solid rgba(38,34,50,.5)}
+  td.rank{font-family:'Cinzel',serif;font-weight:800;color:var(--gold);width:42px}
+  td.val{font-family:'JetBrains Mono',monospace;text-align:right;color:var(--gold-bright)}
+  tr:nth-child(1) td.rank{font-size:19px}
+  .empty{text-align:center;color:var(--muted);padding:26px;font-style:italic}
+
+  footer{margin-top:70px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em;line-height:2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <span>THRONE&nbsp;OF&nbsp;THE&nbsp;INTERNET</span>
+    <span class="live"><span class="dot"></span> LIVE · SEASON 1</span>
+  </div>
+
+  <div class="crown">👑</div>
+  <h1>One Ruler<br>At A Time</h1>
+  <p class="tagline">One person rules the internet. Pay more than them to seize the throne.</p>
+
+  <section class="throne" id="throne">
+    <div class="label">CURRENTLY REIGNING</div>
+    <div class="king" id="king">…</div>
+    <div class="message" id="message"></div>
+    <div class="reign-meta" id="meta"></div>
+  </section>
+
+  <div class="won" id="won">
+    <div style="font-family:'Cinzel';font-weight:800;font-size:20px;color:var(--gold-bright)">👑 The crown is yours.</div>
+    <div style="color:var(--muted);font-size:14px;margin-top:6px">You rule until someone pays more. Make them jealous.</div>
+    <a class="share" id="shareBtn" target="_blank" rel="noopener">Flex it on X →</a>
+  </div>
+
+  <form class="cta" id="form">
+    <div class="field">
+      <label for="name">Your name on the throne</label>
+      <input id="name" maxlength="60" placeholder="e.g. Maxime the First" required />
+    </div>
+    <div class="field">
+      <label for="msg">Your message to the world</label>
+      <textarea id="msg" maxlength="280" rows="2" placeholder="Say something the whole internet will read."></textarea>
+      <div class="count"><span id="c">0</span>/280</div>
+    </div>
+    <button class="seize" id="seize" type="submit">
+      SEIZE THE THRONE — <span class="px" id="price">…</span>
+    </button>
+    <div class="fineprint">
+      Secure checkout via Stripe · pay in your local currency<br>
+      If someone outbids you before payment clears, you're refunded automatically.
+    </div>
+  </form>
+
+  <section class="boards">
+    <h2>The Hall of Kings</h2>
+    <p class="sub">Reigns are eternal. Glory is measured three ways.</p>
+    <div class="tabs">
+      <button class="tab active" data-board="spend">💰 Biggest Spenders</button>
+      <button class="tab" data-board="time">⏳ Longest Combined Reign</button>
+      <button class="tab" data-board="longest">🏆 Longest Single Reign</button>
+    </div>
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </section>
+
+  <footer>
+    THE THRONE NEVER SLEEPS · THE PRICE FALLS WHEN NO ONE DARES<br>
+    BUILT FOR THOSE WHO REFUSE TO BE FORGOTTEN
+  </footer>
+</div>
+
+<script>
+  // ---- Supabase wiring (publishable key is safe to expose client-side) ----
+  const SUPABASE_URL = "https://sbzkzisukdglwgbompay.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_hVy7e7K0Ld8SJxa-HnO0_A_HzZFKpbP";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const fmt = (c) => "$" + (c/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const dur = (s) => { s=Math.max(0,s|0); const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+    if(d) return d+"d "+h+"h"; if(h) return h+"h "+m+"m"; if(m) return m+"m"; return s+"s"; };
+
+  // ---- Live throne ----
+  function renderThrone(t){
+    if(!t) return;
+    document.getElementById("king").textContent = t.display_name || "The Throne";
+    const msgEl = document.getElementById("message");
+    msgEl.textContent = (t.message_status === "approved") ? (t.message || "") : "message under review";
+    const since = new Date(t.crowned_at);
+    document.getElementById("meta").textContent =
+      "crowned " + since.toLocaleString() + " · held the crown for " + dur((Date.now()-since.getTime())/1000);
+  }
+  async function loadThrone(){
+    const { data } = await db.from("throne_current").select("*").eq("id",1).single();
+    renderThrone(data);
+  }
+  db.channel("throne")
+    .on("postgres_changes",{event:"*",schema:"public",table:"throne_current"},
+        (p)=>{ renderThrone(p.new); loadPrice(); loadBoard(currentBoard); })
+    .subscribe();
+
+  // ---- Live price (decays over time -> refresh) ----
+  async function loadPrice(){
+    const { data, error } = await db.rpc("throne_required_cents");
+    if(!error && data!=null) document.getElementById("price").textContent = fmt(Number(data));
+  }
+
+  // ---- Leaderboards ----
+  let currentBoard = "spend";
+  const boardCfg = {
+    spend:  { table:"leaderboard_spend",  head:["#","Ruler","Total spent"], val:r=>fmt(r.total_cents) },
+    time:   { table:"leaderboard_time",   head:["#","Ruler","Time reigned"], val:r=>dur(r.total_seconds) },
+    longest:{ table:"leaderboard_longest",head:["#","Ruler","Single reign"], val:r=>dur(r.duration_seconds) },
+  };
+  async function loadBoard(key){
+    currentBoard = key;
+    const cfg = boardCfg[key];
+    document.getElementById("thead").innerHTML =
+      "<tr>"+cfg.head.map((h,i)=>"<th"+(i===2?" style='text-align:right'":"")+">"+h+"</th>").join("")+"</tr>";
+    const { data } = await db.from(cfg.table).select("*");
+    const tb = document.getElementById("tbody");
+    if(!data || !data.length){ tb.innerHTML = "<tr><td colspan='3' class='empty'>No reign has ended yet. Be the first legend.</td></tr>"; return; }
+    tb.innerHTML = data.map((r,i)=>
+      "<tr><td class='rank'>"+(i+1)+"</td><td>"+(r.name||"Anonymous")+"</td><td class='val'>"+cfg.val(r)+"</td></tr>").join("");
+  }
+  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); loadBoard(b.dataset.board);
+  }));
+
+  // ---- Seize the throne ----
+  document.getElementById("msg").addEventListener("input",e=>document.getElementById("c").textContent=e.target.value.length);
+  document.getElementById("form").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const btn = document.getElementById("seize");
+    const displayName = document.getElementById("name").value.trim();
+    const message = document.getElementById("msg").value.trim();
+    if(!displayName){ document.getElementById("name").focus(); return; }
+    btn.disabled = true; const old = btn.innerHTML; btn.innerHTML = "Preparing checkout…";
+    try{
+      const res = await fetch(SUPABASE_URL+"/functions/v1/checkout",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY},
+        body: JSON.stringify({ displayName, message })
+      });
+      const out = await res.json();
+      if(out.url){ window.location.href = out.url; }
+      else { alert(out.error || "Something went wrong. Try again."); btn.disabled=false; btn.innerHTML=old; }
+    }catch(err){ alert("Network error. Try again."); btn.disabled=false; btn.innerHTML=old; }
+  });
+
+  // ---- Victory state after Stripe redirect ----
+  if(new URLSearchParams(location.search).get("crowned")==="1"){
+    document.getElementById("won").classList.add("show");
+    document.getElementById("form").style.display="none";
+    setTimeout(async ()=>{
+      const { data } = await db.from("throne_current").select("display_name").eq("id",1).single();
+      const name = data?.display_name || "me";
+      const txt = encodeURIComponent('I just seized the Throne of the Internet 👑 Dethrone me if you dare:');
+      document.getElementById("shareBtn").href =
+        "https://twitter.com/intent/tweet?text="+txt+"&url="+encodeURIComponent(location.origin);
+    }, 400);
+  }
+
+  // ---- Boot + refresh price every 5s (it decays) ----
+  loadThrone(); loadPrice(); loadBoard("spend");
+  setInterval(loadPrice, 5000);
+  setInterval(loadThrone, 15000);
+</script>
+</body>
+</html>
