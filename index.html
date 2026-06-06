@@ -18,6 +18,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/@hellouxpavel/cssanimation@latest/dist/cssanimation.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@hellouxpavel/cssanimation@latest/dist/cssanimation-utility.min.css" rel="stylesheet">
 <script type="importmap">
 { "imports": {
   "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -53,11 +56,11 @@
   h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(34px,9vw,68px);letter-spacing:.015em;line-height:1;
      background:linear-gradient(100deg,var(--gold-deep),var(--gold-bright) 30%,#fff7e6 50%,var(--gold-bright) 70%,var(--gold-deep));
      background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
-     animation:shine 7s linear infinite, rise 1s cubic-bezier(.2,.8,.2,1) both;
+     animation:shine 7s linear infinite;
      text-shadow:0 0 40px rgba(216,178,94,.25)}
   @keyframes shine{to{background-position:220% center}}
   .tagline{color:#d9d2c0;font-size:clamp(15px,2.6vw,19px);margin-top:16px;font-style:italic;letter-spacing:.01em;
-     text-shadow:0 2px 14px rgba(0,0,0,.95),0 0 28px rgba(0,0,0,.9);animation:rise 1s .1s cubic-bezier(.2,.8,.2,1) both}
+     text-shadow:0 2px 14px rgba(0,0,0,.95),0 0 28px rgba(0,0,0,.9)}
   @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 
   .stats{display:flex;justify-content:center;margin:26px auto 0;flex-wrap:wrap;
@@ -181,9 +184,11 @@
   @keyframes panelGlow{0%,100%{box-shadow:0 40px 100px -50px rgba(216,178,94,.35),inset 0 1px 0 rgba(255,255,255,.05)}50%{box-shadow:0 42px 130px -45px rgba(216,178,94,.62),inset 0 1px 0 rgba(255,255,255,.08)}}
   .reveal{opacity:0;transform:translateY(28px);transition:opacity .85s cubic-bezier(.2,.8,.2,1),transform .85s cubic-bezier(.2,.8,.2,1)}
   .reveal.in{opacity:1;transform:none}
+  tbody tr.rowin{animation:rowIn .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 45ms)}
+  @keyframes rowIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   .message{transition:opacity .4s}
   .reign-meta .t{transition:color .3s}
-  @media (prefers-reduced-motion: reduce){ .panel{animation:none} .reveal{opacity:1;transform:none;transition:none} .tick,.king.flip{animation:none} }
+  @media (prefers-reduced-motion: reduce){ .panel{animation:none} .reveal{opacity:1;transform:none;transition:none} .tick,.king.flip,tbody tr.rowin{animation:none} }
   @media (prefers-reduced-motion: reduce){ .seize::after{animation:none} h1{animation:none} }
 </style>
 </head>
@@ -256,8 +261,8 @@
   </section>
 
   <section class="boards">
-    <h2>The Hall of Kings</h2>
-    <p class="sub">This season's crown. Resets monthly — <span id="seasonCountdown">…</span></p>
+    <h2 data-ca="ca__fx-fadeInBottom">The Hall of Kings</h2>
+    <p class="sub" data-ca="ca__fx-fadeIn">This season's crown. Resets monthly — <span id="seasonCountdown">…</span></p>
     <div class="tabs">
       <button class="tab active" data-board="spend">💰 Biggest Spenders</button>
       <button class="tab" data-board="time">⏳ Longest Combined Reign</button>
@@ -265,8 +270,8 @@
     </div>
     <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
 
-    <h2 style="margin-top:54px">The Pantheon</h2>
-    <p class="sub">Each season's champion, immortalized forever.</p>
+    <h2 style="margin-top:54px" data-ca="ca__fx-fadeInBottom">The Pantheon</h2>
+    <p class="sub" data-ca="ca__fx-fadeIn">Each season's champion, immortalized forever.</p>
     <table>
       <thead><tr><th>Season</th><th>Champion</th><th style="text-align:right">Spent</th></tr></thead>
       <tbody id="pantheonBody"></tbody>
@@ -302,7 +307,8 @@ try {
 
   const camera = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, 0.1, 120);
   camera.position.set(0, 2.4, 10);
-  function fitCamera(){ const portrait = innerWidth / innerHeight < 0.85; camera.fov = portrait ? 70 : 54; camera.position.z = portrait ? 14 : 10; camera.updateProjectionMatrix(); }
+  let baseZ = 10;
+  function fitCamera(){ const portrait = innerWidth / innerHeight < 0.85; camera.fov = portrait ? 70 : 54; baseZ = portrait ? 14 : 10; camera.position.z = baseZ; camera.updateProjectionMatrix(); }
   fitCamera();
 
   // materials
@@ -385,6 +391,15 @@ try {
   const glow = new THREE.PointLight(0xffd27a, 2.2, 20, 0); glow.position.set(0, 5.4, -6.4); scene.add(glow);
   const torches = [];
   for (const sx of [-4.3, 4.3]) { const tl = new THREE.PointLight(0xff8a3c, 1.4, 16, 0); tl.position.set(sx, 4.4, -4); scene.add(tl); torches.push(tl); }
+  const warmCol = new THREE.Color(0xff8a3c), siegeCol = new THREE.Color(0xff2e1a);
+
+  // coronation sparks
+  const SPK = 140; const spkPos = new Float32Array(SPK*3), spkVel = new Float32Array(SPK*3);
+  const spkGeo = new THREE.BufferGeometry(); spkGeo.setAttribute('position', new THREE.BufferAttribute(spkPos, 3));
+  const spkMat = new THREE.PointsMaterial({ color: 0xffe6a8, size: 0.13, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const sparks = new THREE.Points(spkGeo, spkMat); scene.add(sparks);
+  let spkLife = 0;
+  function emitSparks(){ for (let i=0;i<SPK;i++){ spkPos[i*3]=0; spkPos[i*3+1]=2.2; spkPos[i*3+2]=-7; const a=Math.random()*Math.PI*2, r=Math.random(); spkVel[i*3]=Math.cos(a)*(1.5+r*3); spkVel[i*3+1]=3+Math.random()*6; spkVel[i*3+2]=Math.sin(a)*(1.5+r*3); } spkLife=1; spkMat.opacity=1; spkGeo.attributes.position.needsUpdate=true; }
 
   // post-processing bloom
   const composer = new EffectComposer(renderer);
@@ -393,10 +408,12 @@ try {
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
-  // interaction + flash
-  let mx = 0, my = 0, flash = 0;
+  // interaction + reactive state
+  let mx = 0, my = 0, flash = 0, punch = 0, tension = 0;
   addEventListener('pointermove', (e) => { mx = (e.clientX / innerWidth - 0.5); my = (e.clientY / innerHeight - 0.5); }, { passive: true });
   window.throneFlash = () => { flash = 1; };
+  window.throneCrown = () => { flash = 1.3; punch = 1.4; tension = 0; emitSparks(); };
+  window.throneChallengePulse = () => { tension = Math.min(1, tension + 0.9); flash = Math.max(flash, 0.5); };
 
   addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight; fitCamera();
@@ -411,17 +428,22 @@ try {
 
     camera.position.x += (Math.sin(t * 0.16) * 0.7 + mx * 1.1 - camera.position.x) * 0.04;
     camera.position.y += (2.4 + Math.sin(t * 0.22) * 0.18 - my * 0.6 - camera.position.y) * 0.04;
+    camera.position.z = baseZ - punch; punch *= 0.9;
     camera.lookAt(0, 2.8, -7);
 
-    crown.rotation.y += dt * 0.45;
+    crown.rotation.y += dt * (0.45 + tension * 1.2);
     crown.position.y = 6.0 + Math.sin(t * 1.1) * 0.13;
-    crownMat.emissiveIntensity = 1.9 + Math.sin(t * 2.2) * 0.18 + flash * 2.8;
-    glow.intensity = 2.2 + flash * 4;
-    bloom.strength = 0.72 + flash * 0.9;
-    flash *= 0.94;
+    crownMat.emissiveIntensity = 1.9 + Math.sin(t * 2.2) * 0.18 + flash * 2.8 + tension * 1.6;
+    glow.intensity = 2.2 + flash * 4 + tension * 2;
+    bloom.strength = 0.72 + flash * 0.9 + tension * 0.5;
+    flash *= 0.94; tension *= 0.97;
 
-    shafts.forEach((s, i) => { s.material.opacity = 0.05 + Math.sin(t * 0.5 + i) * 0.025; });
-    torches.forEach((tl, i) => { tl.intensity = 1.3 + Math.sin(t * 9 + i * 2) * 0.3 + Math.random() * 0.15; });
+    shafts.forEach((s, i) => { s.material.opacity = 0.05 + Math.sin(t * 0.5 + i) * 0.025 + tension * 0.14; });
+    torches.forEach((tl, i) => { tl.intensity = 1.3 + Math.sin(t * 9 + i * 2) * 0.3 + Math.random() * 0.15 + tension * 1.5; tl.color.copy(warmCol).lerp(siegeCol, tension * 0.75); });
+
+    if (spkLife > 0) { spkLife -= dt * 0.7; spkMat.opacity = Math.max(0, spkLife);
+      for (let i = 0; i < SPK; i++) { spkVel[i*3+1] -= 7 * dt; spkPos[i*3] += spkVel[i*3]*dt; spkPos[i*3+1] += spkVel[i*3+1]*dt; spkPos[i*3+2] += spkVel[i*3+2]*dt; }
+      spkGeo.attributes.position.needsUpdate = true; }
 
     const p = dustGeo.attributes.position.array;
     for (let i = 0; i < N; i++) { p[i*3+1] += vel[i] * dt; if (p[i*3+1] > 10) p[i*3+1] = 0; }
@@ -470,8 +492,9 @@ try {
   }
   db.channel("throne")
     .on("postgres_changes",{event:"*",schema:"public",table:"throne_current"},
-      (p)=>{ const isNew = p.new.display_name !== lastKing; if(window.throneFlash) window.throneFlash();
-        if(isNew){ showNewKing(p.new.display_name, p.new.message_status==="approved"?p.new.message:""); playFanfare(); }
+      (p)=>{ const isNew = p.new.display_name !== lastKing;
+        if(isNew){ if(window.throneCrown) window.throneCrown(); showNewKing(p.new.display_name, p.new.message_status==="approved"?p.new.message:""); playFanfare(); }
+        else { if(window.throneFlash) window.throneFlash(); }
         throne=p.new; lastKing=p.new.display_name; paintThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard(currentBoard); })
     .subscribe();
   setInterval(paintThrone, 1000);
@@ -513,7 +536,7 @@ try {
     const { data } = await db.from(cfg.table).select("*");
     const tb = document.getElementById("tbody");
     if(!data || !data.length){ tb.innerHTML = "<tr><td colspan='3' class='empty'>No reign has ended yet. Be the first legend.</td></tr>"; return; }
-    tb.innerHTML = data.map((r,i)=> "<tr><td class='rank'>"+(i+1)+"</td><td>"+(r.name||"Anonymous")+"</td><td class='val'>"+cfg.val(r)+"</td></tr>").join("");
+    tb.innerHTML = data.map((r,i)=> "<tr class='rowin' style='--i:"+i+"'><td class='rank'>"+(i+1)+"</td><td>"+(r.name||"Anonymous")+"</td><td class='val'>"+cfg.val(r)+"</td></tr>").join("");
   }
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
     document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active")); b.classList.add("active"); loadBoard(b.dataset.board);
@@ -535,12 +558,13 @@ try {
     }catch(err){ alert("Network error. Try again."); btn.disabled=false; btn.innerHTML=old; }
   }
 
-  document.getElementById("form").addEventListener("submit", (e)=>{
+  document.getElementById("form").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const displayName = document.getElementById("name").value.trim();
     const message = document.getElementById("msg").value.trim();
     if(!displayName){ document.getElementById("name").focus(); return; }
-    try{ db.from("challenges").insert({ name: displayName }); }catch(e){}
+    showChallenger(displayName); if(window.throneChallengePulse) window.throneChallengePulse();
+    try{ await db.from("challenges").insert({ name: displayName }); }catch(e){}
     startCheckout({ action:"take", displayName, message }, document.getElementById("seize"));
   });
   document.getElementById("fortifyBtn").addEventListener("click", ()=> startCheckout({ action:"fortify" }, document.getElementById("fortifyBtn")));
@@ -585,7 +609,7 @@ try {
   // ---- live "watching" counter (Supabase Realtime presence) ----
   const presence = db.channel("presence-throne", { config:{ presence:{ key: (self.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Math.random())) }, broadcast:{ self:false } } });
   presence.on("presence",{event:"sync"},()=>{ const n=Object.keys(presence.presenceState()).length||1; const el=document.getElementById("watching"); if(el) el.textContent=n; });
-  db.channel("challenges").on("postgres_changes",{event:"INSERT",schema:"public",table:"challenges"},(p)=>showChallenger(p.new && p.new.name)).subscribe();
+  db.channel("challenges").on("postgres_changes",{event:"INSERT",schema:"public",table:"challenges"},(p)=>{ showChallenger(p.new && p.new.name); if(window.throneChallengePulse) window.throneChallengePulse(); }).subscribe();
   presence.subscribe(async (s)=>{ if(s==="SUBSCRIBED"){ try{ await presence.track({at:Date.now()}); }catch(e){} } });
 
   // ---- sound (generated, no audio files) ----
@@ -614,7 +638,7 @@ try {
   // ---- pantheon (past-season champions) ----
   async function loadPantheon(){ const { data } = await db.from("pantheon").select("*"); const tb=document.getElementById("pantheonBody"); if(!tb) return;
     if(!data || !data.length){ tb.innerHTML="<tr><td colspan='3' class='empty'>No season has ended yet. This season's champion will be immortalized here.</td></tr>"; return; }
-    tb.innerHTML=data.map(r=>"<tr><td>"+r.season+"</td><td>👑 "+(r.champion||"Anonymous")+"</td><td class='val'>"+fmt(r.total_cents)+"</td></tr>").join(""); }
+    tb.innerHTML=data.map((r,i)=>"<tr class='rowin' style='--i:"+i+"'><td>"+r.season+"</td><td>👑 "+(r.champion||"Anonymous")+"</td><td class='val'>"+fmt(r.total_cents)+"</td></tr>").join(""); }
 
   // ---- season reset countdown ----
   function updateSeason(){ const now=new Date(); const end=new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth()+1, 1));
@@ -625,10 +649,21 @@ try {
 
   // reveal-on-scroll
   const _io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); _io.unobserve(e.target);} }),{threshold:.12});
-  document.querySelectorAll(".panel, .boards h2, .boards .sub, .boards .tabs, .boards table").forEach(el=>{ el.classList.add("reveal"); _io.observe(el); });
+  document.querySelectorAll(".panel, .boards .tabs, .boards table").forEach(el=>{ el.classList.add("reveal"); _io.observe(el); });
   setTimeout(()=>document.querySelectorAll(".reveal").forEach(el=>el.classList.add("in")),1500);
+  // cssanimation: scroll-triggered section reveals
+  const caEls=document.querySelectorAll("[data-ca]");
+  caEls.forEach(el=>{ el.style.opacity="0"; });
+  const _cio=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ const fx=e.target.getAttribute("data-ca"); e.target.style.opacity=""; e.target.classList.add("cssanimation", fx); _cio.unobserve(e.target);} }),{threshold:.18});
+  caEls.forEach(el=>_cio.observe(el));
+  setTimeout(()=>caEls.forEach(el=>{ el.style.opacity=""; }),1600);
 
   loadThrone(); loadPrice(); loadStats(); loadFeed(); loadBoard("spend"); loadPantheon(); updateSeason();
+  if(window.gsap){
+    gsap.from(".hero h1",{y:30,opacity:0,duration:1.1,ease:"power3.out"});
+    gsap.from(".tagline",{y:18,opacity:0,duration:1,delay:.15,ease:"power3.out"});
+    gsap.from(".stats .s",{y:22,opacity:0,duration:.8,stagger:.08,delay:.3,ease:"power2.out"});
+  }
   setInterval(updateSeason, 30000);
   setInterval(loadPantheon, 60000);
   setInterval(loadPrice, 5000);
