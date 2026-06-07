@@ -46,6 +46,8 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
   .wrap{position:relative;z-index:2;max-width:740px;margin:0 auto;padding:30px 22px 90px}
+  .wrap::before{content:"";position:absolute;left:-50vw;right:-50vw;top:85vh;bottom:-120px;z-index:-1;pointer-events:none;
+    background:linear-gradient(180deg,transparent 0,var(--bg) 240px)}
   .topbar{display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted)}
   .topbar .live{display:flex;align-items:center;gap:7px}
   .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);box-shadow:0 0 12px var(--gold-bright);animation:pulse 1.8s infinite}
@@ -179,8 +181,7 @@
   .sharebtn:hover{transform:translateY(-2px)}
   .fortify{transition:background .18s,transform .15s}
   .fortify:hover{transform:translateY(-2px)}
-  .king{transition:text-shadow .4s}
-  .king.flip{animation:kingIn .6s cubic-bezier(.2,.8,.2,1)}
+  .king{transition:text-shadow .4s}  .king.flip{animation:kingIn .6s cubic-bezier(.2,.8,.2,1)}
   @keyframes kingIn{0%{opacity:0;transform:translateY(10px) scale(.97);filter:blur(5px)}100%{opacity:1;transform:none;filter:none}}
   .panel{animation:panelGlow 7s ease-in-out infinite}
   @keyframes panelGlow{0%,100%{box-shadow:0 40px 100px -50px rgba(216,178,94,.35),inset 0 1px 0 rgba(255,255,255,.05)}50%{box-shadow:0 42px 130px -45px rgba(216,178,94,.62),inset 0 1px 0 rgba(255,255,255,.08)}}
@@ -192,9 +193,21 @@
   .reign-meta .t{transition:color .3s}
   @media (prefers-reduced-motion: reduce){ .panel{animation:none} .reveal{opacity:1;transform:none;transition:none} .tick,.king.flip,tbody tr.rowin{animation:none} }
   @media (prefers-reduced-motion: reduce){ .seize::after{animation:none} h1{animation:none} }
+  /* ---- ruler portrait ---- */
+  .portrait{display:none;width:128px;height:128px;border-radius:50%;object-fit:cover;margin:4px auto 6px;
+    border:2px solid var(--gold);box-shadow:0 0 0 4px rgba(216,178,94,.12),0 14px 40px -10px rgba(216,178,94,.55);
+    animation:portraitIn .7s cubic-bezier(.2,.8,.2,1) both}
+  .portrait.show{display:block}
+  @keyframes portraitIn{from{opacity:0;transform:scale(.86) translateY(8px)}to{opacity:1;transform:none}}
+  .portrait-upload{margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .won-portrait{display:none;width:120px;height:120px;border-radius:50%;object-fit:cover;border:2px solid var(--gold-bright);
+    box-shadow:0 0 0 4px rgba(216,178,94,.14),0 0 36px rgba(216,178,94,.5)}
+  .portrait-note{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-align:center;line-height:1.6}
+  .portrait-note b{color:var(--gold-bright)}
 </style>
 </head>
 <body>
+<audio id="bgm" src="theme.mp3" loop preload="auto"></audio>
 <div id="scene"></div>
 <div class="vignette"></div>
 <div class="grain"></div>
@@ -221,6 +234,7 @@
 
   <section class="panel throne" id="throne">
     <div class="label">CURRENTLY REIGNING</div>
+    <img id="portrait" class="portrait" alt="The reigning ruler" />
     <div class="king" id="king">…</div>
     <div class="message" id="message"></div>
     <div class="reign-meta" id="meta"></div>
@@ -235,6 +249,12 @@
         <a class="sharebtn" id="shTg" target="_blank" rel="noopener">Telegram</a>
         <a class="sharebtn" id="shFb" target="_blank" rel="noopener">Facebook</a>
         <a class="sharebtn" id="shX" target="_blank" rel="noopener">X</a>
+      </div>
+      <div class="portrait-upload" id="portraitUpload">
+        <img id="wonPortrait" class="won-portrait" alt="Your portrait on the throne" />
+        <button class="sharebtn primary" id="portraitBtn">📸 Put your face on the throne</button>
+        <input type="file" id="portraitInput" accept="image/png,image/jpeg,image/webp" style="display:none" />
+        <div class="portrait-note" id="portraitNote">Your portrait appears once approved. Stays private to you until then.</div>
       </div>
       <div class="btnrow">
         <button class="fortify" id="fortifyBtn">Fortify your reign — <span id="fortifyPx">…</span></button>
@@ -402,6 +422,32 @@ try {
   placeFigure(makeCourtier(robeBlue, true), 0.75, -4.9, Math.PI, true);
   // ===== END ROYAL COURT =====
 
+  // ground mist — soft rolling haze near the floor
+  const mist = [];
+  for (let i = 0; i < 3; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: 0x6a5a7a, transparent: true, opacity: 0.05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(34, 16), m); pl.rotation.x = -Math.PI/2 + 0.06; pl.rotation.z = i; pl.position.set(0, 0.4 + i*0.25, -6); scene.add(pl); mist.push(pl);
+  }
+
+  // hanging banners that sway along the front columns
+  const banners = [];
+  const bannerMat = new THREE.MeshStandardMaterial({ color: 0x5a1622, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, emissive: 0x1a0608, emissiveIntensity: 0.4 });
+  for (const sx of [-1, 1]) { for (const bz of [-1.2, -4.4]) {
+    const grp = new THREE.Group(); grp.position.set(sx * 3.7, 7.4, bz);
+    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 3.2, 1, 6), bannerMat); cloth.position.y = -1.6; grp.add(cloth);
+    const trim = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.12, 0.06), gold); trim.position.y = -0.05; grp.add(trim);
+    scene.add(grp); banners.push({ grp, phase: Math.random()*Math.PI*2 });
+  } }
+
+  // ruler portrait — a gilded medallion above the throne (set when a photo is approved)
+  const portraitMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: THREE.DoubleSide });
+  const portraitMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), portraitMat); portraitMesh.position.set(0, 3.3, -6.4); portraitMesh.visible = false; scene.add(portraitMesh);
+  const portraitRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.06, 14, 44), gold); portraitRing.position.set(0, 3.3, -6.42); portraitRing.visible = false; scene.add(portraitRing);
+  window.throneSetPortrait = (url) => {
+    if (!url) { portraitMesh.visible = false; portraitRing.visible = false; if (portraitMat.map) { portraitMat.map.dispose(); portraitMat.map = null; } portraitMat.opacity = 0; return; }
+    new THREE.TextureLoader().load(url, (tex) => { tex.colorSpace = THREE.SRGBColorSpace; portraitMat.map = tex; portraitMat.needsUpdate = true; portraitMat.opacity = 1; portraitMesh.visible = true; portraitRing.visible = true; }, undefined, () => {});
+  };
+
   // crown of light (the glow source for bloom)
   const crown = new THREE.Group(); crown.position.set(0, 6.0, -7);
   const crownMat = new THREE.MeshStandardMaterial({ color: 0x3a2c0c, metalness: 1, roughness: 0.25, emissive: 0xf4d68f, emissiveIntensity: 1.9 });
@@ -527,6 +573,10 @@ try {
 
     for (let i = 0; i < court.length; i++) { const c = court[i]; c.g.rotation.z = Math.sin(t * 0.8 + c.phase) * (c.sway + tension * 0.03); c.g.position.y = c.baseY + Math.abs(Math.sin(t * 1.05 + c.phase)) * c.bob; }
 
+    for (let i = 0; i < mist.length; i++) { mist[i].rotation.z += dt * 0.02 * (i + 1); mist[i].material.opacity = 0.04 + Math.sin(t * 0.3 + i) * 0.02 + tension * 0.05; }
+    for (let i = 0; i < banners.length; i++) { const b = banners[i]; b.grp.rotation.z = Math.sin(t * 0.8 + b.phase) * (0.05 + tension * 0.06); b.grp.rotation.x = Math.sin(t * 0.6 + b.phase) * 0.03; }
+    if (portraitMesh.visible) { portraitMesh.position.y = 3.3 + Math.sin(t * 1.1) * 0.06; portraitRing.position.y = portraitMesh.position.y; portraitRing.rotation.z = Math.sin(t * 0.4) * 0.05; }
+
     composer.render();
   }
   animate();
@@ -560,6 +610,12 @@ try {
     msgEl.classList.toggle("has", !!approved);
     const since = new Date(throne.crowned_at).getTime();
     document.getElementById("meta").innerHTML = "has held the crown for <span class='t'>" + dur((Date.now()-since)/1000) + "</span>";
+    const pr = document.getElementById("portrait");
+    const showPhoto = throne.photo_status === "approved" && throne.photo_path;
+    const url = showPhoto ? (SUPABASE_URL + "/storage/v1/object/public/portraits/" + throne.photo_path) : "";
+    if(showPhoto){ if(pr.getAttribute("src")!==url){ pr.src = url; } pr.classList.add("show"); }
+    else { pr.classList.remove("show"); pr.removeAttribute("src"); }
+    if(window.throneSetPortrait) window.throneSetPortrait(url);
   }
   async function loadThrone(){
     const { data } = await db.from("throne_current").select("*").eq("id",1).single();
@@ -678,6 +734,32 @@ try {
       copy.onclick = async ()=>{ try{ await navigator.clipboard.writeText(kingUrl); copy.textContent="Copied ✓"; setTimeout(()=>copy.textContent="🔗 Copy link",1600);}catch(e){ prompt("Copy your link:", kingUrl); } };
       const nat = document.getElementById("nativeShare");
       if(navigator.share){ nat.style.display="inline-block"; nat.onclick=()=>navigator.share({title:"Throne of the Internet", text, url:kingUrl}).catch(()=>{}); }
+
+      // ---- portrait: claim your face on the throne ----
+      const token = data?.reign_token || "";
+      const pBtn=document.getElementById("portraitBtn"), pInput=document.getElementById("portraitInput"),
+            pNote=document.getElementById("portraitNote"), wonPr=document.getElementById("wonPortrait");
+      if(pBtn && pInput && token){
+        pBtn.onclick = ()=> pInput.click();
+        pInput.onchange = async ()=>{
+          const file = pInput.files && pInput.files[0]; if(!file) return;
+          if(file.size > 5*1024*1024){ pNote.innerHTML = "Image too large — max 5MB."; return; }
+          const reader = new FileReader();
+          reader.onload = e=>{ wonPr.src = e.target.result; wonPr.style.display="block"; };
+          reader.readAsDataURL(file);
+          pBtn.disabled = true; pBtn.textContent = "Uploading…";
+          try{
+            const ext = ((file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")) || "jpg";
+            const path = token + "/" + Date.now() + "." + ext;
+            const up = await db.storage.from("portraits").upload(path, file, { contentType:file.type, upsert:false });
+            if(up.error) throw up.error;
+            const res = await db.rpc("set_my_portrait", { p_token: token, p_path: path });
+            if(res.error) throw res.error;
+            if(res.data === true){ pNote.innerHTML = "✓ Portrait received — goes <b>live once approved</b>."; pBtn.textContent = "Portrait submitted ✓"; }
+            else { pNote.innerHTML = "Couldn't attach it — the throne may have changed hands."; pBtn.disabled=false; pBtn.textContent="📸 Put your face on the throne"; }
+          }catch(err){ pNote.innerHTML = "Upload failed. Try again."; pBtn.disabled=false; pBtn.textContent="📸 Put your face on the throne"; }
+        };
+      }
     }, 300);
   } else if(params.get("fortified")==="1"){
     document.getElementById("meta").innerHTML += " · <span class='t'>reign fortified ⚔️</span>";
@@ -692,9 +774,14 @@ try {
 
   // ---- sound (generated, no audio files) ----
   let audioCtx=null, muted=false;
-  function unlockAudio(){ try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }catch(e){} }
+  const bgm=document.getElementById("bgm"); if(bgm) bgm.volume=0.0;
+  function startMusic(){ if(!bgm||muted) return; bgm.play().then(()=>{ // fade in
+      const target=0.32; let v=bgm.volume; const id=setInterval(()=>{ v=Math.min(target,v+0.02); bgm.volume=v; if(v>=target) clearInterval(id); },80);
+    }).catch(()=>{}); }
+  function unlockAudio(){ try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }catch(e){} startMusic(); }
   addEventListener("pointerdown", unlockAudio);
-  document.getElementById("soundToggle").addEventListener("click",function(){ muted=!muted; this.textContent=muted?"🔇":"🔊"; unlockAudio(); });
+  document.getElementById("soundToggle").addEventListener("click",function(){ muted=!muted; this.textContent=muted?"🔇":"🔊"; unlockAudio();
+    if(bgm){ if(muted){ bgm.pause(); } else { startMusic(); } } });
   function playFanfare(){ if(!audioCtx||muted) return; const now=audioCtx.currentTime;
     [523.25,659.25,783.99,1046.5].forEach((f,i)=>{ const o=audioCtx.createOscillator(),g=audioCtx.createGain();
       o.type="triangle"; o.frequency.value=f; o.connect(g); g.connect(audioCtx.destination);
