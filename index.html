@@ -212,6 +212,17 @@
   .portrait-pick-thumb{display:none;width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
   .portrait-pick-status{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.03em}
   .portrait-pick-status b{color:var(--gold-bright)}
+  .reclaim-banner{display:none;margin:0 0 14px;padding:14px 18px;border-radius:13px;text-align:center;
+    font-family:'Cormorant Garamond',serif;font-size:17px;color:#fff7e6;
+    background:linear-gradient(180deg,rgba(200,85,61,.22),rgba(120,30,20,.18));border:1px solid #c8553d;
+    box-shadow:0 12px 40px -16px rgba(200,85,61,.6);animation:rise .5s both}
+  .reclaim-banner.show{display:block}
+  .reclaim-banner b{color:var(--gold-bright)}
+  .embed-box{margin-top:14px;display:none;flex-direction:column;gap:8px;align-items:center}
+  .embed-box.show{display:flex}
+  .embed-title{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--muted)}
+  .embed-box textarea{width:100%;max-width:520px;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:10px;
+    color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 12px;resize:none}
 </style>
 </head>
 <body>
@@ -240,6 +251,8 @@
     <div class="ticker" id="ticker" style="display:none"><div class="track" id="tickerTrack"></div></div>
   </section>
 
+  <div class="reclaim-banner" id="reclaimBanner">⚔️ Someone stole your crown. <b>Reclaim the throne now</b> — the price drops every minute.</div>
+
   <section class="panel throne" id="throne">
     <div class="label">CURRENTLY REIGNING</div>
     <img id="portrait" class="portrait" alt="The reigning ruler" />
@@ -257,6 +270,12 @@
         <a class="sharebtn" id="shTg" target="_blank" rel="noopener">Telegram</a>
         <a class="sharebtn" id="shFb" target="_blank" rel="noopener">Facebook</a>
         <a class="sharebtn" id="shX" target="_blank" rel="noopener">X</a>
+        <button class="sharebtn" id="dlCard">📥 Download card</button>
+      </div>
+      <div class="embed-box" id="embedBox">
+        <div class="embed-title">📡 Put a live 👑 badge on your site or stream</div>
+        <textarea id="embedCode" readonly rows="2"></textarea>
+        <button class="sharebtn" id="copyEmbed">Copy embed code</button>
       </div>
       <div class="portrait-upload" id="portraitUpload">
         <img id="wonPortrait" class="won-portrait" alt="Your portrait on the throne" />
@@ -784,6 +803,10 @@ try {
   }
 
   const params = new URLSearchParams(location.search);
+  if(params.get("reclaim")==="1"){
+    const rb=document.getElementById("reclaimBanner"); if(rb) rb.classList.add("show");
+    setTimeout(()=>{ const f=document.getElementById("name"); if(f){ try{ f.scrollIntoView({behavior:"smooth",block:"center"}); }catch(e){} f.focus(); } }, 600);
+  }
   if(params.get("crowned")==="1"){
     document.getElementById("won").classList.add("show");
     document.getElementById("form").style.display="none";
@@ -792,7 +815,7 @@ try {
     setTimeout(async ()=>{
       const { data } = await db.from("throne_current").select("display_name,reign_token").eq("id",1).single();
       const kingUrl = location.origin + "/k/" + (data?.reign_token || "");
-      const text = 'I just seized the Throne of the Internet 👑 Dethrone me if you dare:';
+      const text = '\u{1F451} I just seized the Throne of the Internet. The whole internet bows to me now \u2014 dethrone me if you dare:';
       const u = encodeURIComponent(kingUrl), t = encodeURIComponent(text);
       document.getElementById("shWa").href = "https://wa.me/?text="+encodeURIComponent(text+" "+kingUrl);
       document.getElementById("shTg").href = "https://t.me/share/url?url="+u+"&text="+t;
@@ -802,6 +825,21 @@ try {
       copy.onclick = async ()=>{ try{ await navigator.clipboard.writeText(kingUrl); copy.textContent="Copied ✓"; setTimeout(()=>copy.textContent="🔗 Copy link",1600);}catch(e){ prompt("Copy your link:", kingUrl); } };
       const nat = document.getElementById("nativeShare");
       if(navigator.share){ nat.style.display="inline-block"; nat.onclick=()=>navigator.share({title:"Throne of the Internet", text, url:kingUrl}).catch(()=>{}); }
+
+      // download your reign card (the OG image)
+      const rtoken = data?.reign_token || "";
+      const dl = document.getElementById("dlCard");
+      if(dl){ dl.onclick = async ()=>{ const old=dl.textContent; dl.textContent="Preparing…"; dl.disabled=true;
+        try{ const res=await fetch(location.origin+"/api/og?reign="+encodeURIComponent(rtoken)); const blob=await res.blob();
+          const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="my-throne.png"; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(()=>URL.revokeObjectURL(a.href),3000); dl.textContent="Downloaded \u2713"; }
+        catch(e){ dl.textContent="Try again"; }
+        finally{ dl.disabled=false; setTimeout(()=>dl.textContent=old,2000); } }; }
+
+      // embeddable live badge for sites / streams
+      const eb=document.getElementById("embedBox"), ec=document.getElementById("embedCode"), ce=document.getElementById("copyEmbed");
+      if(eb && ec){ ec.value='<iframe src="'+location.origin+'/badge" width="360" height="70" style="border:0;overflow:hidden" scrolling="no"></iframe>'; eb.classList.add("show");
+        if(ce){ ce.onclick=async ()=>{ try{ await navigator.clipboard.writeText(ec.value); ce.textContent="Copied \u2713"; setTimeout(()=>ce.textContent="Copy embed code",1600);}catch(e){ ec.select(); } }; } }
 
       // ---- portrait: claim your face on the throne ----
       const token = data?.reign_token || "";
