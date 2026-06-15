@@ -475,6 +475,8 @@ try {
   const backWall = new THREE.Mesh(new THREE.PlaneGeometry(22, 18), wallMat); backWall.position.set(0, 7, -10.0); scene.add(backWall);
   const wallTrim = new THREE.Mesh(new THREE.BoxGeometry(22, 0.4, 0.4), gold); wallTrim.position.set(0, 0.2, -9.9); scene.add(wallTrim);
 
+  const chandFlames = [];
+
   // side walls — enclose the hall so beyond the colonnades is marble, not black void
   for (const side of [-1, 1]) {
     const sw = new THREE.Mesh(new THREE.PlaneGeometry(24, 17), wallMat);
@@ -492,7 +494,6 @@ try {
 
   // hanging chandeliers — emissive gold, bloom does the glow (no extra lights for perf)
   const chandMat = new THREE.MeshStandardMaterial({ color: 0xc79a3a, metalness: 1, roughness: 0.25, emissive: 0xffcf73, emissiveIntensity: 0.8, envMapIntensity: 1.2 });
-  const chandFlames = [];
   for (const side of [-1, 1]) { for (const cz of [-3.2, -7.2]) {
     const ch = new THREE.Group(); ch.position.set(side * 2.7, 6.6, cz);
     const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.6, 6), gold); chain.position.y = 0.9; ch.add(chain);
