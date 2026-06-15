@@ -262,7 +262,7 @@
         <img id="wonPortrait" class="won-portrait" alt="Your portrait on the throne" />
         <button class="sharebtn primary" id="portraitBtn">📸 Put your face on the throne</button>
         <input type="file" id="portraitInput" accept="image/png,image/jpeg,image/webp" style="display:none" />
-        <div class="portrait-note" id="portraitNote">Your portrait appears once approved. Stays private to you until then.</div>
+        <div class="portrait-note" id="portraitNote">Your portrait is checked automatically and appears within seconds.</div>
       </div>
       <div class="btnrow">
         <button class="fortify" id="fortifyBtn">Fortify your reign — <span id="fortifyPx">…</span></button>
@@ -732,11 +732,20 @@ try {
         const up=await db.storage.from("portraits").upload(path,file,{contentType:file.type,upsert:false});
         if(up.error) throw up.error;
         try{ localStorage.setItem("pendingPortrait",path); }catch(e){}
-        status.innerHTML="✓ <b>Ready</b> — shown on the throne once approved"; btn.textContent="📸 Change photo"; btn.disabled=false;
+        status.innerHTML="✓ <b>Ready</b> — auto-checked, appears seconds after you seize"; btn.textContent="📸 Change photo"; btn.disabled=false;
       }catch(err){ status.textContent="Upload failed — try again."; btn.disabled=false; thumb.style.display="none"; }
     };
   })();
 
+  async function moderatePortrait(path){
+    try{
+      const res = await fetch(SUPABASE_URL+"/functions/v1/moderate-portrait",{
+        method:"POST", headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY},
+        body: JSON.stringify({ path })
+      });
+      const out = await res.json(); return out && out.status;
+    }catch(e){ return null; }
+  }
   async function startCheckout(payload, btn){
     const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = "Preparing checkout…";
     try{
@@ -796,10 +805,14 @@ try {
 
       // ---- portrait: claim your face on the throne ----
       const token = data?.reign_token || "";
-      // claim a portrait that was chosen in the form before payment
+      // claim a portrait that was chosen in the form before payment, then auto-moderate
       try{ const pend = localStorage.getItem("pendingPortrait");
         if(pend && token){ const r = await db.rpc("set_my_portrait", { p_token: token, p_path: pend });
-          if(r && r.data === true){ try{ localStorage.removeItem("pendingPortrait"); }catch(e){} } } }catch(e){}
+          if(r && r.data === true){ try{ localStorage.removeItem("pendingPortrait"); }catch(e){}
+            const st = await moderatePortrait(pend);
+            const pn = document.getElementById("portraitNote");
+            if(pn){ pn.innerHTML = st==="approved" ? "✓ Portrait <b>live on the throne</b>." : st==="rejected" ? "Portrait rejected by auto-moderation." : "Portrait under review."; }
+          } } }catch(e){}
       const pBtn=document.getElementById("portraitBtn"), pInput=document.getElementById("portraitInput"),
             pNote=document.getElementById("portraitNote"), wonPr=document.getElementById("wonPortrait");
       if(pBtn && pInput && token){
@@ -818,7 +831,10 @@ try {
             if(up.error) throw up.error;
             const res = await db.rpc("set_my_portrait", { p_token: token, p_path: path });
             if(res.error) throw res.error;
-            if(res.data === true){ pNote.innerHTML = "✓ Portrait received — goes <b>live once approved</b>."; pBtn.textContent = "Portrait submitted ✓"; }
+            if(res.data === true){ pNote.innerHTML = "Checking your portrait…"; pBtn.textContent = "Portrait submitted ✓";
+              const st = await moderatePortrait(path);
+              pNote.innerHTML = st==="approved" ? "✓ Portrait <b>live on the throne</b>." : st==="rejected" ? "Portrait rejected by auto-moderation." : "Portrait under review.";
+            }
             else { pNote.innerHTML = "Couldn't attach it — the throne may have changed hands."; pBtn.disabled=false; pBtn.textContent="📸 Put your face on the throne"; }
           }catch(err){ pNote.innerHTML = "Upload failed. Try again."; pBtn.disabled=false; pBtn.textContent="📸 Put your face on the throne"; }
         };
