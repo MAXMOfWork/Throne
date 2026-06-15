@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/k/:id", "destination": "/api/king?id=:id" }
+    { "source": "/k/:id", "destination": "/api/king?id=:id" },
+    { "source": "/badge", "destination": "/api/badge" }
   ]
 }
