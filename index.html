@@ -38,7 +38,7 @@
   body{background:var(--bg);color:var(--ink);font-family:'Cormorant Garamond',serif;min-height:100vh;overflow-x:hidden}
 
   /* live 3D throne room canvas */
-  #scene{position:fixed;inset:0;z-index:0;background:radial-gradient(900px 600px at 50% 0%,#16110a,#070709 70%)}
+  #scene{position:fixed;inset:0;z-index:0;background:radial-gradient(1100px 760px at 50% 12%,#2a1a09,#1a1107 45%,#0b0805 80%)}
   #scene canvas{display:block}
   .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
     background:radial-gradient(120% 90% at 50% 35%,transparent 55%,rgba(0,0,0,.55) 100%)}
@@ -364,7 +364,7 @@ try {
   host.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x07060a, 0.035);
+  scene.fog = new THREE.FogExp2(0x140d08, 0.032);
   // prefiltered environment so gold & metal actually reflect — the core "premium" lever
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -474,6 +474,21 @@ try {
   // back wall behind the throne — the rose window is set into it, not floating in void
   const backWall = new THREE.Mesh(new THREE.PlaneGeometry(22, 18), wallMat); backWall.position.set(0, 7, -10.0); scene.add(backWall);
   const wallTrim = new THREE.Mesh(new THREE.BoxGeometry(22, 0.4, 0.4), gold); wallTrim.position.set(0, 0.2, -9.9); scene.add(wallTrim);
+
+  // side walls — enclose the hall so beyond the colonnades is marble, not black void
+  for (const side of [-1, 1]) {
+    const sw = new THREE.Mesh(new THREE.PlaneGeometry(24, 17), wallMat);
+    sw.position.set(side * 6.3, 7, -9); sw.rotation.y = -side * Math.PI/2; scene.add(sw);
+    const trimTop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 24), gold); trimTop.position.set(side * 6.15, 8.2, -9); scene.add(trimTop);
+    const trimBot = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 24), gold); trimBot.position.set(side * 6.15, 0.7, -9); scene.add(trimBot);
+  }
+  // wall torches — visible flames mounted on the side walls (warmth + rhythm)
+  for (const side of [-1, 1]) {
+    for (const tz of [-2, -5.5, -9]) {
+      const bracket = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.07, 0.5, 8), gold); bracket.position.set(side * 6.0, 4.2, tz); bracket.rotation.z = side * 0.5; scene.add(bracket);
+      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffb24d })); flame.position.set(side * 5.82, 4.62, tz); flame.scale.set(1, 1.5, 1); flame.castShadow = false; scene.add(flame); chandFlames.push(flame);
+    }
+  }
 
   // hanging chandeliers — emissive gold, bloom does the glow (no extra lights for perf)
   const chandMat = new THREE.MeshStandardMaterial({ color: 0xc79a3a, metalness: 1, roughness: 0.25, emissive: 0xffcf73, emissiveIntensity: 0.8, envMapIntensity: 1.2 });
